@@ -4,6 +4,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
+import 'history_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -295,21 +296,28 @@ class _HomePageState extends State<HomePage> {
             ListTile(
               leading: const Icon(
                 Icons.history,
-                color: const Color(0xFF0F2A3A),
+                color: Color(0xFF0F2A3A),
               ),
               title: const Text(
                 'History',
                 style: TextStyle(
-                  color: const Color(0xFF0F2A3A),
+                  color: Color(0xFF0F2A3A),
                   fontSize: 18,
                   fontWeight: FontWeight.w500,
                 ),
               ),
               onTap: () {
-                Navigator.pop(context);
-                // Navigate to History page later
+                Navigator.pop(context); // close drawer first
+
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const HistoryPage(),
+                  ),
+                );
               },
             ),
+
           ],
         ),
       ),
