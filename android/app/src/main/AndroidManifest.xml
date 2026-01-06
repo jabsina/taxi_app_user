@@ -1,4 +1,7 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.taxi_app_user">
+<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+
     <application
         android:label="taxi_app_user"
         android:name="${applicationName}"
