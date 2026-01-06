@@ -19,8 +19,9 @@ class _HomePageState extends State<HomePage> {
 
   LatLng? _currentLocation;
   bool isSearching = false;
+  bool isWaitingForApproval = false;
 
-  String currentLocationText = "Fetching location...";
+  String currentLocationText = 'Fetching location...';
   final TextEditingController destinationController = TextEditingController();
 
   List<dynamic> placeSuggestions = [];
@@ -38,7 +39,7 @@ class _HomePageState extends State<HomePage> {
     if (permission == LocationPermission.denied ||
         permission == LocationPermission.deniedForever) {
       setState(() {
-        currentLocationText = "Location permission denied";
+        currentLocationText = 'Location permission denied';
       });
       return;
     }
@@ -52,7 +53,7 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _currentLocation = userLatLng;
       currentLocationText =
-      "${position.latitude.toStringAsFixed(5)}, ${position.longitude.toStringAsFixed(5)}";
+      '${position.latitude.toStringAsFixed(5)}, ${position.longitude.toStringAsFixed(5)}';
     });
 
     _mapController.move(userLatLng, 16);
@@ -95,9 +96,11 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Ride request sent')),
-    );
+    setState(() {
+      isWaitingForApproval = true;
+    });
+
+    // send ride request to backend here
   }
 
   @override
@@ -105,10 +108,7 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: const Color(0xFFF6F2F8),
-
-      // 👈 LEFT SLIDE DRAWER
       drawer: _buildDrawer(),
-
       body: Stack(
         children: [
           FlutterMap(
@@ -143,7 +143,6 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
 
-          // ☰ Hamburger Button
           Positioned(
             top: 44,
             left: 16,
@@ -151,26 +150,7 @@ class _HomePageState extends State<HomePage> {
               onTap: () {
                 _scaffoldKey.currentState?.openDrawer();
               },
-              child: Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0F2A3A),
-                  shape: BoxShape.circle,
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 8,
-                      offset: Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.menu,
-                  color: Colors.white,
-                  size: 24,
-                ),
-              ),
+              child: _circleButton(Icons.menu),
             ),
           ),
 
@@ -180,22 +160,7 @@ class _HomePageState extends State<HomePage> {
             right: 16,
             child: Column(
               children: [
-                Container(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 40, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0F2A3A),
-                    borderRadius: BorderRadius.circular(40),
-                  ),
-                  child: const Text(
-                    'Taxi App',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
+                _appTitle(),
                 const SizedBox(height: 18),
 
                 if (!isSearching)
@@ -209,26 +174,12 @@ class _HomePageState extends State<HomePage> {
                   ),
 
                 if (isSearching) ...[
-                  _inputCard(
+                  _locationDisplayCard(
                     icon: Icons.my_location,
-                    enabled: false,
-                    hint: currentLocationText,
+                    text: currentLocationText,
                   ),
                   const SizedBox(height: 12),
-                  _inputCard(
-                    icon: Icons.search,
-                    enabled: true,
-                    hint: 'Enter your destination',
-                    controller: destinationController,
-                    onChanged: searchPlaces,
-                    onClear: () {
-                      setState(() {
-                        destinationController.clear();
-                        placeSuggestions = [];
-                        placeSelected = false;
-                      });
-                    },
-                  ),
+                  _destinationInputCard(),
                   if (placeSuggestions.isNotEmpty) _suggestionList(),
                 ],
               ],
@@ -241,20 +192,82 @@ class _HomePageState extends State<HomePage> {
             right: 24,
             child: GestureDetector(
               onTap: _onRequestRide,
+              child: _requestRideButton(),
+            ),
+          ),
+
+          if (isWaitingForApproval)
+            Positioned.fill(
               child: Container(
-                height: 56,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0F2A3A),
-                  borderRadius: BorderRadius.circular(30),
+                color: Colors.black.withOpacity(0.4),
+                child: Center(
+                  child: _waitingApprovalCard(),
                 ),
-                child: const Center(
-                  child: Text(
-                    'Request Ride',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _waitingApprovalCard() {
+    return Container(
+      width: 300,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: const [
+          BoxShadow(color: Colors.black26, blurRadius: 12),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(
+            width: 40,
+            height: 40,
+            child: CircularProgressIndicator(
+              strokeWidth: 3,
+              color: Color(0xFF0F2A3A),
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Waiting for approval',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF0F2A3A),
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Your ride request has been sent.\nPlease wait for admin confirmation.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 14, color: Colors.black54),
+          ),
+          const SizedBox(height: 20),
+
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                isWaitingForApproval = false;
+                placeSelected = false;
+              });
+            },
+            child: Container(
+              height: 44,
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: const Center(
+                child: Text(
+                  'Cancel Request',
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
@@ -265,65 +278,104 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildDrawer() {
-    return Drawer(
-      backgroundColor: Colors.white,
-      child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 40),
 
-            ListTile(
-              leading: const Icon(
-                Icons.person,
-                color: const Color(0xFF0F2A3A),
-              ),
-              title: const Text(
-                'Profile',
-                style: TextStyle(
-                  color: const Color(0xFF0F2A3A),
-                  fontSize: 18,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                // Navigate to Profile page later
-              },
+  Widget _locationDisplayCard({required IconData icon, required String text}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 8),
+        ],
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.black54),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(fontSize: 15, color: Colors.black87),
+              overflow: TextOverflow.ellipsis,
             ),
-
-            ListTile(
-              leading: const Icon(
-                Icons.history,
-                color: Color(0xFF0F2A3A),
-              ),
-              title: const Text(
-                'History',
-                style: TextStyle(
-                  color: Color(0xFF0F2A3A),
-                  fontSize: 18,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              onTap: () {
-                Navigator.pop(context); // close drawer first
-
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const HistoryPage(),
-                  ),
-                );
-              },
-            ),
-
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
+  Widget _destinationInputCard() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 8),
+        ],
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.search, color: Colors.black54),
+          const SizedBox(width: 14),
+          Expanded(
+            child: TextField(
+              controller: destinationController,
+              onChanged: searchPlaces,
+              decoration: const InputDecoration(
+                hintText: 'Enter your destination',
+                border: InputBorder.none,
+              ),
+            ),
+          ),
+          if (destinationController.text.isNotEmpty)
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  destinationController.clear();
+                  placeSuggestions = [];
+                  placeSelected = false;
+                });
+              },
+              child: const Icon(Icons.close, size: 20),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _suggestionList() {
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      height: 220,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: ListView.separated(
+        itemCount: placeSuggestions.length,
+        separatorBuilder: (_, __) => const Divider(height: 1),
+        itemBuilder: (context, index) {
+          final place = placeSuggestions[index];
+          return ListTile(
+            title: Text(
+              place['display_name'],
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            onTap: () {
+              setState(() {
+                destinationController.text = place['display_name'];
+                placeSuggestions = [];
+                placeSelected = true;
+              });
+            },
+          );
+        },
+      ),
+    );
+  }
 
   Widget _singleSearchBar() {
     return Container(
@@ -343,77 +395,95 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _inputCard({
-    required IconData icon,
-    required bool enabled,
-    required String hint,
-    TextEditingController? controller,
-    Function(String)? onChanged,
-    VoidCallback? onClear,
-  }) {
+  Widget _requestRideButton() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      height: 56,
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        color: const Color(0xFF0F2A3A),
+        borderRadius: BorderRadius.circular(30),
       ),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.black54),
-          const SizedBox(width: 14),
-          Expanded(
-            child: TextField(
-              controller: controller,
-              enabled: enabled,
-              onChanged: onChanged,
-              decoration: InputDecoration(
-                hintText: hint,
-                border: InputBorder.none,
-              ),
-            ),
+      child: const Center(
+        child: Text(
+          'Request Ride',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
           ),
-          if (onClear != null &&
-              controller != null &&
-              controller.text.isNotEmpty)
-            GestureDetector(
-              onTap: onClear,
-              child: const Icon(Icons.close, size: 20),
-            ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _suggestionList() {
+  Widget _circleButton(IconData icon) {
     return Container(
-      margin: const EdgeInsets.only(top: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+      width: 44,
+      height: 44,
+      decoration: const BoxDecoration(
+        color: Color(0xFF0F2A3A),
+        shape: BoxShape.circle,
       ),
-      child: SizedBox(
-        height: 220,
-        child: ListView.separated(
-          itemCount: placeSuggestions.length,
-          separatorBuilder: (_, __) =>
-          const Divider(height: 1),
-          itemBuilder: (context, index) {
-            final place = placeSuggestions[index];
-            return ListTile(
-              title: Text(
-                place['display_name'],
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+      child: Icon(icon, color: Colors.white),
+    );
+  }
+
+  Widget _appTitle() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F2A3A),
+        borderRadius: BorderRadius.circular(40),
+      ),
+      child: const Text(
+        'Taxi App',
+        style: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDrawer() {
+    return Drawer(
+      child: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.only(top: 40),
+          children: [
+            ListTile(
+              leading: const Icon(Icons.person, color: Color(0xFF0F2A3A)),
+              title: const Text(
+                'Profile',
+                style: TextStyle(
+                  color: Color(0xFF0F2A3A),
+                  fontSize: 18,
+                ),
               ),
               onTap: () {
-                setState(() {
-                  destinationController.text = place['display_name'];
-                  placeSuggestions = [];
-                  placeSelected = true;
-                });
+                Navigator.pop(context);
               },
-            );
-          },
+            ),
+            ListTile(
+              leading: const Icon(Icons.history, color: Color(0xFF0F2A3A)),
+              title: const Text(
+                'History',
+                style: TextStyle(
+                  color: Color(0xFF0F2A3A),
+                  fontSize: 18,
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const HistoryPage(),
+                  ),
+                );
+              },
+            ),
+          ],
         ),
       ),
     );
