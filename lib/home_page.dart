@@ -13,6 +13,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final MapController _mapController = MapController();
 
   LatLng? _currentLocation;
@@ -84,7 +85,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _onRequestRide() {
-    FocusScope.of(context).unfocus(); // 👈 hides keyboard
+    FocusScope.of(context).unfocus();
 
     if (!placeSelected) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -98,11 +99,15 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: const Color(0xFFF6F2F8),
+
+      // 👈 LEFT SLIDE DRAWER
+      drawer: _buildDrawer(),
+
       body: Stack(
         children: [
           FlutterMap(
@@ -137,6 +142,37 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
 
+          // ☰ Hamburger Button
+          Positioned(
+            top: 44,
+            left: 16,
+            child: GestureDetector(
+              onTap: () {
+                _scaffoldKey.currentState?.openDrawer();
+              },
+              child: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0F2A3A),
+                  shape: BoxShape.circle,
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 8,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.menu,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+            ),
+          ),
+
           Positioned(
             top: 40,
             left: 16,
@@ -149,13 +185,6 @@ class _HomePageState extends State<HomePage> {
                   decoration: BoxDecoration(
                     color: const Color(0xFF0F2A3A),
                     borderRadius: BorderRadius.circular(40),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 8,
-                        offset: Offset(0, 4),
-                      ),
-                    ],
                   ),
                   child: const Text(
                     'Taxi App',
@@ -216,13 +245,6 @@ class _HomePageState extends State<HomePage> {
                 decoration: BoxDecoration(
                   color: const Color(0xFF0F2A3A),
                   borderRadius: BorderRadius.circular(30),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 10,
-                      offset: Offset(0, 4),
-                    ),
-                  ],
                 ),
                 child: const Center(
                   child: Text(
@@ -242,24 +264,72 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Widget _buildDrawer() {
+    return Drawer(
+      backgroundColor: Colors.white,
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 40),
+
+            ListTile(
+              leading: const Icon(
+                Icons.person,
+                color: const Color(0xFF0F2A3A),
+              ),
+              title: const Text(
+                'Profile',
+                style: TextStyle(
+                  color: const Color(0xFF0F2A3A),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                // Navigate to Profile page later
+              },
+            ),
+
+            ListTile(
+              leading: const Icon(
+                Icons.history,
+                color: const Color(0xFF0F2A3A),
+              ),
+              title: const Text(
+                'History',
+                style: TextStyle(
+                  color: const Color(0xFF0F2A3A),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                // Navigate to History page later
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+
   Widget _singleSearchBar() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 8),
-        ],
       ),
       child: Row(
         children: const [
           Icon(Icons.search, color: Colors.black54),
           SizedBox(width: 12),
-          Text(
-            'Search destination',
-            style: TextStyle(color: Colors.black54, fontSize: 16),
-          ),
+          Text('Search destination',
+              style: TextStyle(color: Colors.black54)),
         ],
       ),
     );
@@ -278,9 +348,6 @@ class _HomePageState extends State<HomePage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 8),
-        ],
       ),
       child: Row(
         children: [
@@ -302,11 +369,7 @@ class _HomePageState extends State<HomePage> {
               controller.text.isNotEmpty)
             GestureDetector(
               onTap: onClear,
-              child: const Icon(
-                Icons.close,
-                size: 20,
-                color: Colors.black45,
-              ),
+              child: const Icon(Icons.close, size: 20),
             ),
         ],
       ),
@@ -319,26 +382,13 @@ class _HomePageState extends State<HomePage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 6,
-            offset: Offset(0, 2),
-          ),
-        ],
       ),
       child: SizedBox(
         height: 220,
         child: ListView.separated(
           itemCount: placeSuggestions.length,
-          separatorBuilder: (_, __) => Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Divider(
-              height: 1,
-              thickness: 1,
-              color: Colors.grey.shade300,
-            ),
-          ),
+          separatorBuilder: (_, __) =>
+          const Divider(height: 1),
           itemBuilder: (context, index) {
             final place = placeSuggestions[index];
             return ListTile(
@@ -346,7 +396,6 @@ class _HomePageState extends State<HomePage> {
                 place['display_name'],
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 14),
               ),
               onTap: () {
                 setState(() {
