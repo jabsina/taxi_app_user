@@ -4,7 +4,6 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
-import 'package:taxi_app_user/profilescreen.dart';
 import 'history_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -213,7 +212,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _waitingApprovalCard() {
     return Container(
-      width: 280,
+      width: 300,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -224,8 +223,8 @@ class _HomePageState extends State<HomePage> {
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        children: const [
-          SizedBox(
+        children: [
+          const SizedBox(
             width: 40,
             height: 40,
             child: CircularProgressIndicator(
@@ -233,8 +232,8 @@ class _HomePageState extends State<HomePage> {
               color: Color(0xFF0F2A3A),
             ),
           ),
-          SizedBox(height: 16),
-          Text(
+          const SizedBox(height: 16),
+          const Text(
             'Waiting for approval',
             style: TextStyle(
               fontSize: 16,
@@ -242,16 +241,43 @@ class _HomePageState extends State<HomePage> {
               color: Color(0xFF0F2A3A),
             ),
           ),
-          SizedBox(height: 8),
-          Text(
+          const SizedBox(height: 8),
+          const Text(
             'Your ride request has been sent.\nPlease wait for admin confirmation.',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 14, color: Colors.black54),
+          ),
+          const SizedBox(height: 20),
+
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                isWaitingForApproval = false;
+                placeSelected = false;
+              });
+            },
+            child: Container(
+              height: 44,
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: const Center(
+                child: Text(
+                  'Cancel Request',
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),
     );
   }
+
 
   Widget _locationDisplayCard({required IconData icon, required String text}) {
     return Container(
@@ -435,12 +461,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
               onTap: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ProfilePage(),
-                  ),
-                );
+                Navigator.pop(context);
               },
             ),
             ListTile(
