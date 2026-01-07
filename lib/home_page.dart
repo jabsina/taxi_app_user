@@ -106,13 +106,13 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF6F2F8),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFF0F2A3A),
         elevation: 0,
         centerTitle: true,
         title: const Text(
           'Taxi App',
           style: TextStyle(
-            color: const Color(0xFF0F2A3A),
+            color: const Color(0xFFF6F2F8),
             fontSize: 25,
             fontWeight: FontWeight.bold,fontStyle: FontStyle.italic
           ),
