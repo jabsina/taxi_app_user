@@ -105,6 +105,19 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF6F2F8),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+        title: const Text(
+          'Taxi App',
+          style: TextStyle(
+            color: const Color(0xFF0F2A3A),
+            fontSize: 25,
+            fontWeight: FontWeight.bold,fontStyle: FontStyle.italic
+          ),
+        ),
+      ),
       body: Stack(
         children: [
           FlutterMap(
@@ -140,12 +153,11 @@ class _HomePageState extends State<HomePage> {
           ),
 
           Positioned(
-            top: 40,
+            top: 1,
             left: 16,
             right: 16,
             child: Column(
               children: [
-                _appTitle(),
                 const SizedBox(height: 18),
 
                 if (!isSearching)
@@ -283,6 +295,7 @@ class _HomePageState extends State<HomePage> {
         children: [
           const Icon(Icons.search, color: Colors.black54),
           const SizedBox(width: 14),
+
           Expanded(
             child: TextField(
               controller: destinationController,
@@ -293,6 +306,23 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
+
+          if (destinationController.text.isNotEmpty)
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  destinationController.clear();
+                  placeSuggestions = [];
+                  placeSelected = false;
+                });
+                FocusScope.of(context).unfocus();
+              },
+              child: const Icon(
+                Icons.close,
+                size: 20,
+                color: Colors.black45,
+              ),
+            ),
         ],
       ),
     );
@@ -359,17 +389,5 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _appTitle() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 10),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0F2A3A),
-        borderRadius: BorderRadius.circular(40),
-      ),
-      child: const Text(
-        'Taxi App',
-        style: TextStyle(color: Colors.white, fontSize: 20),
-      ),
-    );
-  }
+
 }
