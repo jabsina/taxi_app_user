@@ -95,7 +95,7 @@ class _GetStartedPageState extends State<GetStartedPage> {
                     TextFormField(
                       controller: _usernameController,
                       decoration: InputDecoration(
-                        hintText: 'Username',
+                        hintText: 'Name',
                         prefixIcon: const Icon(Icons.person_outline),
                         filled: true,
                         fillColor: const Color(0xFFF3F5F7),

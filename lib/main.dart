@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+
 import 'package:taxi_app_user/home_page.dart';
+import 'package:taxi_app_user/landingscreen.dart';
 import 'package:taxi_app_user/loginscreen.dart';
 import 'package:taxi_app_user/profilescreen.dart';
 
@@ -13,7 +15,8 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(debugShowCheckedModeBanner: false,
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
       theme: ThemeData(
         // This is the theme of your application.
@@ -33,8 +36,7 @@ class MyApp extends StatelessWidget {
         // tested with just a hot reload.
         colorScheme: .fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: GetStartedPage()
+      home: GetStartedPages(),
     );
   }
 }
-
