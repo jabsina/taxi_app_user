@@ -4,9 +4,6 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
-import 'package:taxi_app_user/profilescreen.dart';
-import 'history_page.dart';
-import 'profilescreen.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -16,7 +13,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final MapController _mapController = MapController();
 
   LatLng? _currentLocation;
@@ -102,15 +98,13 @@ class _HomePageState extends State<HomePage> {
       isWaitingForApproval = true;
     });
 
-    // send ride request to backend here
+    // backend request goes here later
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      key: _scaffoldKey,
       backgroundColor: const Color(0xFFF6F2F8),
-      drawer: _buildDrawer(),
       body: Stack(
         children: [
           FlutterMap(
@@ -146,17 +140,6 @@ class _HomePageState extends State<HomePage> {
           ),
 
           Positioned(
-            top: 44,
-            left: 16,
-            child: GestureDetector(
-              onTap: () {
-                _scaffoldKey.currentState?.openDrawer();
-              },
-              child: _circleButton(Icons.menu),
-            ),
-          ),
-
-          Positioned(
             top: 40,
             left: 16,
             right: 16,
@@ -167,11 +150,7 @@ class _HomePageState extends State<HomePage> {
 
                 if (!isSearching)
                   GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        isSearching = true;
-                      });
-                    },
+                    onTap: () => setState(() => isSearching = true),
                     child: _singleSearchBar(),
                   ),
 
@@ -202,9 +181,7 @@ class _HomePageState extends State<HomePage> {
             Positioned.fill(
               child: Container(
                 color: Colors.black.withOpacity(0.4),
-                child: Center(
-                  child: _waitingApprovalCard(),
-                ),
+                child: Center(child: _waitingApprovalCard()),
               ),
             ),
         ],
@@ -219,20 +196,14 @@ class _HomePageState extends State<HomePage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: const [
-          BoxShadow(color: Colors.black26, blurRadius: 12),
-        ],
+        boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 12)],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const SizedBox(
-            width: 40,
-            height: 40,
-            child: CircularProgressIndicator(
-              strokeWidth: 3,
-              color: Color(0xFF0F2A3A),
-            ),
+          const CircularProgressIndicator(
+            strokeWidth: 3,
+            color: Color(0xFF0F2A3A),
           ),
           const SizedBox(height: 16),
           const Text(
@@ -250,7 +221,6 @@ class _HomePageState extends State<HomePage> {
             style: TextStyle(fontSize: 14, color: Colors.black54),
           ),
           const SizedBox(height: 20),
-
           GestureDetector(
             onTap: () {
               setState(() {
@@ -280,16 +250,12 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-
   Widget _locationDisplayCard({required IconData icon, required String text}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 8),
-        ],
       ),
       child: Row(
         children: [
@@ -298,7 +264,6 @@ class _HomePageState extends State<HomePage> {
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(fontSize: 15, color: Colors.black87),
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -313,9 +278,6 @@ class _HomePageState extends State<HomePage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 8),
-        ],
       ),
       child: Row(
         children: [
@@ -331,17 +293,6 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
-          if (destinationController.text.isNotEmpty)
-            GestureDetector(
-              onTap: () {
-                setState(() {
-                  destinationController.clear();
-                  placeSuggestions = [];
-                  placeSelected = false;
-                });
-              },
-              child: const Icon(Icons.close, size: 20),
-            ),
         ],
       ),
     );
@@ -361,11 +312,7 @@ class _HomePageState extends State<HomePage> {
         itemBuilder: (context, index) {
           final place = placeSuggestions[index];
           return ListTile(
-            title: Text(
-              place['display_name'],
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
+            title: Text(place['display_name'], maxLines: 2),
             onTap: () {
               setState(() {
                 destinationController.text = place['display_name'];
@@ -386,12 +333,11 @@ class _HomePageState extends State<HomePage> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
       ),
-      child: Row(
-        children: const [
+      child: const Row(
+        children: [
           Icon(Icons.search, color: Colors.black54),
           SizedBox(width: 12),
-          Text('Search destination',
-              style: TextStyle(color: Colors.black54)),
+          Text('Search destination'),
         ],
       ),
     );
@@ -407,25 +353,9 @@ class _HomePageState extends State<HomePage> {
       child: const Center(
         child: Text(
           'Request Ride',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(color: Colors.white, fontSize: 18),
         ),
       ),
-    );
-  }
-
-  Widget _circleButton(IconData icon) {
-    return Container(
-      width: 44,
-      height: 44,
-      decoration: const BoxDecoration(
-        color: Color(0xFF0F2A3A),
-        shape: BoxShape.circle,
-      ),
-      child: Icon(icon, color: Colors.white),
     );
   }
 
@@ -438,61 +368,7 @@ class _HomePageState extends State<HomePage> {
       ),
       child: const Text(
         'Taxi App',
-        style: TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDrawer() {
-    return Drawer(
-      child: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.only(top: 40),
-          children: [
-            ListTile(
-              leading: const Icon(Icons.person, color: Color(0xFF0F2A3A)),
-              title: const Text(
-                'Profile',
-                style: TextStyle(
-                  color: Color(0xFF0F2A3A),
-                  fontSize: 18,
-                ),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ProfilePage(),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.history, color: Color(0xFF0F2A3A)),
-              title: const Text(
-                'History',
-                style: TextStyle(
-                  color: Color(0xFF0F2A3A),
-                  fontSize: 18,
-                ),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const HistoryPage(),
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
+        style: TextStyle(color: Colors.white, fontSize: 20),
       ),
     );
   }

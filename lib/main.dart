@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:taxi_app_user/home_page.dart';
 import 'package:taxi_app_user/landingscreen.dart';
 import 'package:taxi_app_user/loginscreen.dart';
+import 'package:taxi_app_user/main_screen.dart';
 import 'package:taxi_app_user/profilescreen.dart';
 
 void main() {
@@ -36,7 +37,7 @@ class MyApp extends StatelessWidget {
         // tested with just a hot reload.
         colorScheme: .fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: GetStartedPages(),
+      home: MainScreen(),
     );
   }
 }
