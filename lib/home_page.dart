@@ -4,6 +4,8 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
+import 'call_confirmation_sheet.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -83,6 +85,21 @@ class _HomePageState extends State<HomePage> {
       });
     }
   }
+  Future<void> _callAdminNumber() async {
+    const String adminNumber = '+919876543210'; // real number
+
+    final Uri uri = Uri(
+      scheme: 'tel',
+      path: adminNumber,
+    );
+
+    await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    );
+  }
+
+
 
   void _onRequestRide() {
     FocusScope.of(context).unfocus();
@@ -94,11 +111,14 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    setState(() {
-      isWaitingForApproval = true;
-    });
-
-    // backend request goes here later
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => CallConfirmationSheet(
+        onConfirm: _callAdminNumber,
+      ),
+    );
   }
 
   @override

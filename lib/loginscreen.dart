@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:taxi_app_user/home_page.dart';
+import 'main_screen.dart';
 
 class GetStartedPage extends StatefulWidget {
   const GetStartedPage({super.key});
@@ -25,7 +25,7 @@ class _GetStartedPageState extends State<GetStartedPage> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => const HomePage(),
+          builder: (context) => const MainScreen(),
         ),
       );
     }
