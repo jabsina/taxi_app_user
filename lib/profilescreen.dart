@@ -3,109 +3,125 @@ import 'package:flutter/material.dart';
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
 
+  static const Color primaryColor = Color(0xFF0E2A38);
+
   @override
   Widget build(BuildContext context) {
-    const primaryColor = Color(0xFF0E2A38);
-
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0E2A38),
-              Color(0xFF1C4E63),
-            ],
-          ),
+      backgroundColor: Colors.white,
+
+      // 🔹 Proper AppBar (professional apps always have this)
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: primaryColor,
+        title: const Text(
+          'Profile',
+          style: TextStyle(fontWeight: FontWeight.w600),
         ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              const SizedBox(height: 40),
+        centerTitle: true,
+      ),
 
-              /// PROFILE IMAGE
-              Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 3),
-                ),
-                child: const CircleAvatar(
-                  radius: 55,
-                  backgroundImage: AssetImage(
-                    'assets/images/Profile.png',
-                  ),
-                ),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          const SizedBox(height: 10),
+
+          /// PROFILE IMAGE
+          Center(
+            child: CircleAvatar(
+              radius: 55,
+              backgroundImage: const AssetImage(
+                'assets/images/Profile.png',
               ),
-
-              const SizedBox(height: 16),
-
-              /// NAME
-              const Text(
-                'Saniya Benny',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-
-              const SizedBox(height: 6),
-
-              /// PHONE NUMBER
-              const Text(
-                '+91 98765 43210',
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 14,
-                ),
-              ),
-
-              const SizedBox(height: 40),
-
-              /// PROFILE INFO CARD
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 24),
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(28),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.12),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: const [
-                    _ProfileTile(
-                      icon: Icons.person_outline,
-                      title: 'Username',
-                      value: 'saniya_benny',
-                    ),
-                    Divider(height: 32),
-                    _ProfileTile(
-                      icon: Icons.phone_outlined,
-                      title: 'Phone',
-                      value: '+91 98765 43210',
-                    ),
-
-                  ],
-                ),
-              ),
-            ],
+              backgroundColor: Colors.grey.shade200,
+            ),
           ),
-        ),
+
+          const SizedBox(height: 16),
+
+          /// NAME
+          const Center(
+            child: Text(
+              'Saniya Benny',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 6),
+
+          /// PHONE
+          const Center(
+            child: Text(
+              '+91 98765 43210',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey,
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 30),
+
+          /// MAIN INFO CARD (THEME COLOR)
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: primaryColor,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              children: const [
+                _ProfileTile(
+                  icon: Icons.person_outline,
+                  title: 'Username',
+                  value: 'saniya_benny',
+                ),
+                Divider(height: 28, color: Colors.white24),
+                _ProfileTile(
+                  icon: Icons.phone_outlined,
+                  title: 'Phone',
+                  value: '+91 98765 43210',
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 30),
+
+          /// OPTIONAL ACTION
+          SizedBox(
+            height: 50,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              onPressed: () {
+                // logout later
+              },
+              child: const Text(
+                'Logout',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-/// REUSABLE TILE
+/// TILE USED INSIDE THE DARK CARD
 class _ProfileTile extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -121,7 +137,7 @@ class _ProfileTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, color: Color(0xFF0E2A38)),
+        Icon(icon, color: Colors.white),
         const SizedBox(width: 16),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -130,7 +146,7 @@ class _ProfileTile extends StatelessWidget {
               title,
               style: const TextStyle(
                 fontSize: 12,
-                color: Colors.grey,
+                color: Colors.white70,
               ),
             ),
             const SizedBox(height: 4),
@@ -139,6 +155,7 @@ class _ProfileTile extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
+                color: Colors.white,
               ),
             ),
           ],
