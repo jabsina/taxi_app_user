@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:taxi_app_user/loginscreen.dart';
+import 'package:taxi_app_user/screen/loginscreen.dart';
 
 class GetStartedPages extends StatelessWidget {
   const GetStartedPages({super.key});
