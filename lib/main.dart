@@ -5,11 +5,15 @@ import 'package:taxi_app_user/screen/landingscreen.dart';
 import 'package:taxi_app_user/screen/loginscreen.dart';
 import 'package:taxi_app_user/screen/main_screen.dart';
 import 'package:taxi_app_user/screen/profilescreen.dart';
-import 'package:taxi_app_user/splash_screen.dart';
+import 'package:taxi_app_user/screen/splash_screen.dart';
+import 'package:taxi_app_user/services/notifications_services.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await NotificationService.init();   // 🔔 runtime permission happens here
   runApp(const MyApp());
 }
+
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'main_screen.dart';
+import '../../services/notifications_services.dart';  // 🔔 ADDED
 
 class GetStartedPage extends StatefulWidget {
   const GetStartedPage({super.key});
@@ -24,6 +25,13 @@ class _GetStartedPageState extends State<GetStartedPage> {
 
   void _login() {
     if (_formKey.currentState!.validate()) {
+
+      // 🔔 NOTIFICATION AFTER LOGIN
+      NotificationService.show(
+        title: 'Login Successful',
+        body: 'Welcome, ${_usernameController.text}!',
+      );
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
