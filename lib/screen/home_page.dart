@@ -1,3 +1,4 @@
+// ... all your imports remain the same
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
@@ -48,16 +49,12 @@ class _HomePageState extends State<HomePage> {
       desiredAccuracy: LocationAccuracy.high,
     );
 
-    await _getAddressFromLatLng(
-      position.latitude,
-      position.longitude,
-    );
+    await _getAddressFromLatLng(position.latitude, position.longitude);
   }
 
   Future<void> _getAddressFromLatLng(double lat, double lon) async {
     final url = Uri.parse(
-      'https://nominatim.openstreetmap.org/reverse?lat=$lat&lon=$lon&format=json',
-    );
+        'https://nominatim.openstreetmap.org/reverse?lat=$lat&lon=$lon&format=json');
 
     final response = await http.get(url, headers: {'User-Agent': 'taxi-app'});
 
@@ -80,8 +77,7 @@ class _HomePageState extends State<HomePage> {
     }
 
     final url = Uri.parse(
-      'https://nominatim.openstreetmap.org/search?q=$query&format=json&addressdetails=1&limit=5&countrycodes=in',
-    );
+        'https://nominatim.openstreetmap.org/search?q=$query&format=json&addressdetails=1&limit=5&countrycodes=in');
 
     final response = await http.get(url, headers: {'User-Agent': 'taxi-app'});
 
@@ -100,8 +96,7 @@ class _HomePageState extends State<HomePage> {
     }
 
     final url = Uri.parse(
-      'https://nominatim.openstreetmap.org/search?q=$query&format=json&addressdetails=1&limit=5&countrycodes=in',
-    );
+        'https://nominatim.openstreetmap.org/search?q=$query&format=json&addressdetails=1&limit=5&countrycodes=in');
 
     final response = await http.get(url, headers: {'User-Agent': 'taxi-app'});
 
@@ -116,8 +111,7 @@ class _HomePageState extends State<HomePage> {
   // ---------------- CALL ADMIN ----------------
   Future<void> _callAdminNumber() async {
     const adminNumber = '+919876543210';
-    final Uri uri = Uri.parse('tel:$adminNumber');
-
+    final uri = Uri(scheme: 'tel', path: adminNumber);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
@@ -127,7 +121,6 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  // ---------------- REQUEST RIDE WITH CALL ----------------
   void _onRequestRide() {
     FocusScope.of(context).unfocus();
 
@@ -151,9 +144,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      backgroundColor: const Color(0xFFF6F2F8),
-
-      // ✅ PREMIUM NAVBAR
+      backgroundColor: Colors.transparent,
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(64),
         child: AppBar(
@@ -178,30 +169,36 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ),
-
       body: Stack(
         children: [
-          SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                _pickupBox(),
-                if (pickupSuggestions.isNotEmpty) _pickupSuggestionList(),
-                const SizedBox(height: 14),
-                _destinationBox(),
-                if (destinationSuggestions.isNotEmpty)
-                  _destinationSuggestionList(),
-                const SizedBox(height: 100),
-              ],
+          Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFFF6F2F8), Color(0xFFEFEAF3)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
             ),
-          ),
-          Positioned(
-            bottom: 16,
-            left: 16,
-            right: 16,
-            child: GestureDetector(
-              onTap: _onRequestRide,
-              child: _requestRideButton(),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+              child: Column(
+                children: [
+                  _pickupBox(),
+                  if (pickupSuggestions.isNotEmpty) _pickupSuggestionList(),
+                  const SizedBox(height: 20),
+                  _destinationBox(),
+                  if (destinationSuggestions.isNotEmpty)
+                    _destinationSuggestionList(),
+                  const SizedBox(height: 20),
+                  // Request Ride button now directly under destination box
+                  GestureDetector(
+                    onTap: _onRequestRide,
+                    child: _requestRideButton(),
+                  ),
+                ],
+              ),
             ),
           ),
           if (isWaitingForApproval)
@@ -216,6 +213,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // ---------------- WIDGETS ----------------
   Widget _pickupBox() {
     return _inputBox(
       icon: Icons.my_location,
@@ -244,22 +242,41 @@ class _HomePageState extends State<HomePage> {
     required Function(String) onChanged,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Row(
         children: [
-          Icon(icon, color: iconColor),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: iconColor.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: iconColor),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: TextField(
               controller: controller,
               onChanged: onChanged,
+              style:
+              const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
               decoration: InputDecoration(
                 hintText: hint,
+                hintStyle: const TextStyle(color: Colors.black54),
                 border: InputBorder.none,
+                isDense: true,
               ),
             ),
           ),
@@ -269,29 +286,23 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _pickupSuggestionList() {
-    return _suggestionList(
-      pickupSuggestions,
-          (place) {
-        setState(() {
-          pickupController.text = place['display_name'];
-          pickupSuggestions = [];
-          pickupSelected = true;
-        });
-      },
-    );
+    return _suggestionList(pickupSuggestions, (place) {
+      setState(() {
+        pickupController.text = place['display_name'];
+        pickupSuggestions = [];
+        pickupSelected = true;
+      });
+    });
   }
 
   Widget _destinationSuggestionList() {
-    return _suggestionList(
-      destinationSuggestions,
-          (place) {
-        setState(() {
-          destinationController.text = place['display_name'];
-          destinationSuggestions = [];
-          destinationSelected = true;
-        });
-      },
-    );
+    return _suggestionList(destinationSuggestions, (place) {
+      setState(() {
+        destinationController.text = place['display_name'];
+        destinationSuggestions = [];
+        destinationSelected = true;
+      });
+    });
   }
 
   Widget _suggestionList(List<dynamic> list, Function(dynamic) onTap) {
@@ -301,8 +312,16 @@ class _HomePageState extends State<HomePage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: ListView.separated(
+        physics: const BouncingScrollPhysics(),
         itemCount: list.length,
         separatorBuilder: (_, __) => const Divider(height: 1),
         itemBuilder: (context, index) {
@@ -319,14 +338,26 @@ class _HomePageState extends State<HomePage> {
   Widget _requestRideButton() {
     return Container(
       height: 56,
-      decoration: const BoxDecoration(
-        color: Color(0xFF0F2A3A),
-        borderRadius: BorderRadius.zero, // rectangle
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF0F2A3A), Color(0xFF1A3B5A)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: const Center(
         child: Text(
           'Request Ride',
-          style: TextStyle(color: Colors.white, fontSize: 18),
+          style: TextStyle(
+              color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
         ),
       ),
     );
