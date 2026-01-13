@@ -1,7 +1,6 @@
 // ... all your imports remain the same
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:taxi_app_user/widget/call_confirmation_sheet.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -16,7 +15,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   bool isWaitingForApproval = false;
 
-  String pickupLocationText = 'Fetching pickup location...';
+  String pickupLocationText = 'Enter pickup location';
 
   final TextEditingController pickupController = TextEditingController();
   final TextEditingController destinationController = TextEditingController();
@@ -30,43 +29,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    _getPickupLocation();
-  }
-
-  // ---------------- LOCATION ----------------
-  Future<void> _getPickupLocation() async {
-    LocationPermission permission = await Geolocator.requestPermission();
-
-    if (permission == LocationPermission.denied ||
-        permission == LocationPermission.deniedForever) {
-      setState(() {
-        pickupLocationText = 'Location permission denied';
-      });
-      return;
-    }
-
-    final position = await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
-    );
-
-    await _getAddressFromLatLng(position.latitude, position.longitude);
-  }
-
-  Future<void> _getAddressFromLatLng(double lat, double lon) async {
-    final url = Uri.parse(
-        'https://nominatim.openstreetmap.org/reverse?lat=$lat&lon=$lon&format=json');
-
-    final response = await http.get(url, headers: {'User-Agent': 'taxi-app'});
-
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-
-      setState(() {
-        pickupLocationText = data['display_name'] ?? 'Unknown location';
-        pickupController.text = pickupLocationText;
-        pickupSelected = true;
-      });
-    }
+    // Auto-fetch removed
   }
 
   // ---------------- SEARCH ----------------
@@ -150,12 +113,12 @@ class _HomePageState extends State<HomePage> {
         child: AppBar(
           elevation: 0,
           backgroundColor: const Color(0xFF0F2A3A),
-          centerTitle: true,
+          centerTitle: false,
           title: const Text(
             'Taxi App',
             style: TextStyle(
               color: Colors.white,
-              fontSize: 20,
+              fontSize: 25,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.6,
             ),
@@ -192,7 +155,6 @@ class _HomePageState extends State<HomePage> {
                   if (destinationSuggestions.isNotEmpty)
                     _destinationSuggestionList(),
                   const SizedBox(height: 20),
-                  // Request Ride button now directly under destination box
                   GestureDetector(
                     onTap: _onRequestRide,
                     child: _requestRideButton(),
@@ -270,8 +232,8 @@ class _HomePageState extends State<HomePage> {
             child: TextField(
               controller: controller,
               onChanged: onChanged,
-              style:
-              const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              style: const TextStyle(
+                  fontSize: 16, fontWeight: FontWeight.w500),
               decoration: InputDecoration(
                 hintText: hint,
                 hintStyle: const TextStyle(color: Colors.black54),
@@ -357,7 +319,9 @@ class _HomePageState extends State<HomePage> {
         child: Text(
           'Request Ride',
           style: TextStyle(
-              color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w600),
         ),
       ),
     );
