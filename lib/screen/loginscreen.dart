@@ -47,27 +47,7 @@ class _GetStartedPageState extends State<GetStartedPage> {
       backgroundColor: Colors.white,
 
       /// Proper AppBar (this alone changes the feel a LOT)
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: const Color(0xFF0F2A3A),
-        centerTitle: false,
-        title: const Text(
-          'Taxi App',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 25,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.6,
-          ),
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(
-            height: 1,
-            color: Colors.white.withOpacity(0.08),
-          ),
-        ),
-      ),
+
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),

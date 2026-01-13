@@ -31,6 +31,28 @@ class _HistoryPageState extends State<HistoryPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar:AppBar(
+        elevation: 0,
+        backgroundColor: const Color(0xFF0F2A3A),
+        centerTitle: false,
+        title: const Text(
+          'Ride History',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 25,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.6,
+          ),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(
+            height: 1,
+            color: Colors.white.withOpacity(0.08),
+          ),
+        ),
+      ),
+
       backgroundColor: const Color(0xFFF6F2F8),
       body: SafeArea(
         child: Column(
@@ -38,27 +60,7 @@ class _HistoryPageState extends State<HistoryPage> {
           children: [
             const SizedBox(height: 20),
 
-            /// Header
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: const Icon(Icons.arrow_back, color: Color(0xFF0F2A3A)),
-                  ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'Ride History',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF0F2A3A),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+
 
             const SizedBox(height: 20),
 
