@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
-import 'loginscreen.dart';
+import 'screen/loginscreen.dart';
 
 class LandingScreen extends StatefulWidget {
   const LandingScreen({super.key});
