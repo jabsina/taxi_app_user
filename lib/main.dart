@@ -5,6 +5,7 @@ import 'package:taxi_app_user/landingscreen.dart';
 import 'package:taxi_app_user/loginscreen.dart';
 import 'package:taxi_app_user/main_screen.dart';
 import 'package:taxi_app_user/profilescreen.dart';
+import 'package:taxi_app_user/splash_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -37,7 +38,7 @@ class MyApp extends StatelessWidget {
         // tested with just a hot reload.
         colorScheme: .fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: GetStartedPage(),
+      home: LandingScreen(),
     );
   }
 }
