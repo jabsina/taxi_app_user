@@ -11,15 +11,26 @@ class ProfilePage extends StatelessWidget {
       backgroundColor: Colors.white,
 
       // 🔹 Proper AppBar (professional apps always have this)
-      appBar: AppBar(
+      appBar:AppBar(
         elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: primaryColor,
+        backgroundColor: const Color(0xFF0F2A3A),
+        centerTitle: false,
         title: const Text(
           'Profile',
-          style: TextStyle(fontWeight: FontWeight.w600),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 25,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.6,
+          ),
         ),
-        centerTitle: true,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(
+            height: 1,
+            color: Colors.white.withOpacity(0.08),
+          ),
+        ),
       ),
 
       body: ListView(
