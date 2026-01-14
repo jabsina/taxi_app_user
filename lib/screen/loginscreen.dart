@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'main_screen.dart';
-import '../../services/notifications_services.dart';  // 🔔 ADDED
+import 'package:taxi_app_user/screen/main_screen.dart';
+import '../../services/notifications_services.dart';
+import '../../services/api_service.dart';
 
 class GetStartedPage extends StatefulWidget {
   const GetStartedPage({super.key});
@@ -13,6 +14,7 @@ class _GetStartedPageState extends State<GetStartedPage> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _phoneController = TextEditingController();
+  bool _isLoading = false;
 
   static const Color primaryColor = Color(0xFF0E2A38);
 
@@ -23,21 +25,48 @@ class _GetStartedPageState extends State<GetStartedPage> {
     super.dispose();
   }
 
-  void _login() {
+  void _login() async {
     if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isLoading = true;
+      });
 
-      // 🔔 NOTIFICATION AFTER LOGIN
-      NotificationService.show(
-        title: 'Login Successful',
-        body: 'Welcome, ${_usernameController.text}!',
-      );
+      try {
+        final phoneNumber = '+${_phoneController.text}';
+        final name = _usernameController.text.trim();
+        
+        final loginResponse = await ApiService.login(phoneNumber, name);
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const MainScreen(),
-        ),
-      );
+        // 🔔 NOTIFICATION AFTER LOGIN
+        NotificationService.show(
+          title: 'Login Successful',
+          body: 'Welcome, ${loginResponse.user.name}!',
+        );
+
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const MainScreen(),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Login failed: ${e.toString()}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
     }
   }
 
@@ -145,7 +174,7 @@ class _GetStartedPageState extends State<GetStartedPage> {
 
                   /// CONTINUE BUTTON
                   ElevatedButton(
-                    onPressed: _login,
+                    onPressed: _isLoading ? null : _login,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: primaryColor,
                       padding: const EdgeInsets.symmetric(vertical: 16),
@@ -154,15 +183,24 @@ class _GetStartedPageState extends State<GetStartedPage> {
                       ),
                       elevation: 4,
                     ),
-                    child: const Text(
-                      'CONTINUE',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        letterSpacing: 1,
-                      ),
-                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text(
+                            'CONTINUE',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              letterSpacing: 1,
+                            ),
+                          ),
                   ),
                 ],
               ),

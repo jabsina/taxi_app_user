@@ -1,8 +1,13 @@
-// ... all your imports remain the same
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:taxi_app_user/widget/call_confirmation_sheet.dart';
+import 'package:taxi_app_user/services/api_service.dart';
+import 'package:taxi_app_user/services/notifications_services.dart';
+import 'package:taxi_app_user/models/ride_model.dart';
+import 'package:taxi_app_user/models/user_model.dart';
+import 'package:taxi_app_user/screen/loginscreen.dart';
+import 'package:taxi_app_user/screen/main_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class HomePage extends StatefulWidget {
@@ -14,6 +19,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   bool isWaitingForApproval = false;
+  bool isRequestingRide = false;
+  String? currentRideId;
 
   String pickupLocationText = 'Enter pickup location';
 
@@ -84,7 +91,8 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _onRequestRide() {
+  // ---------------- RIDE REQUEST ----------------
+  Future<void> _requestRide() async {
     FocusScope.of(context).unfocus();
 
     if (!pickupSelected || !destinationSelected) {
@@ -94,11 +102,106 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (_) => CallConfirmationSheet(onConfirm: _callAdminNumber),
+    setState(() {
+      isRequestingRide = true;
+    });
+
+    try {
+      final response = await ApiService.requestRide(
+        pickupController.text.trim(),
+        destinationController.text.trim(),
+      );
+
+      setState(() {
+        currentRideId = response.ride.id;
+        isWaitingForApproval = true;
+      });
+
+      NotificationService.show(
+        title: 'Ride Requested',
+        body: response.message,
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(response.message),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // Navigate to ride history after successful ride request
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const MainScreen(initialIndex: 1), // Index 1 is History
+          ),
+        );
+      }
+
+    } catch (e) {
+      final errorMessage = e.toString();
+      
+      if (errorMessage.contains('Authentication failed') || 
+          errorMessage.contains('Please login')) {
+        _handleAuthError(errorMessage);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ride request failed: $errorMessage'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      setState(() {
+        isRequestingRide = false;
+      });
+    }
+  }
+
+  Future<void> _checkRideStatus() async {
+    if (currentRideId == null) return;
+
+    try {
+      final ride = await ApiService.getRideStatus(currentRideId!);
+      
+      if (ride.status == 'assigned' || ride.status == 'started' || ride.status == 'completed') {
+        setState(() {
+          isWaitingForApproval = false;
+        });
+
+        NotificationService.show(
+          title: 'Ride Status Updated',
+          body: 'Your ride is ${ride.status}',
+        );
+      }
+    } catch (e) {
+      print('Error checking ride status: $e');
+    }
+  }
+
+  void _onRequestRide() {
+    if (isRequestingRide) return;
+    _requestRide();
+  }
+
+  void _handleAuthError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        action: SnackBarAction(
+          label: 'Login',
+          textColor: Colors.white,
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const GetStartedPage()),
+            );
+          },
+        ),
+      ),
     );
   }
 
@@ -298,30 +401,62 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _requestRideButton() {
-    return Container(
-      height: 56,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        gradient: const LinearGradient(
-          colors: [Color(0xFF0F2A3A), Color(0xFF1A3B5A)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+    return GestureDetector(
+      onTap: isRequestingRide ? null : _onRequestRide,
+      child: Container(
+        height: 56,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          gradient: isRequestingRide 
+              ? LinearGradient(
+                  colors: [Colors.grey.shade400, Colors.grey.shade500],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : const LinearGradient(
+                  colors: [Color(0xFF0F2A3A), Color(0xFF1A3B5A)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: const Center(
-        child: Text(
-          'Request Ride',
-          style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w600),
+        child: Center(
+          child: isRequestingRide
+              ? const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Text(
+                      'Requesting...',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                )
+              : const Text(
+                  'Request Ride',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600),
+                ),
         ),
       ),
     );
@@ -347,12 +482,27 @@ class _HomePageState extends State<HomePage> {
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
-          GestureDetector(
-            onTap: () => setState(() => isWaitingForApproval = false),
-            child: const Text(
-              'Cancel Request',
-              style: TextStyle(color: Colors.red),
-            ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextButton(
+                onPressed: _checkRideStatus,
+                child: const Text('Check Status'),
+              ),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    isWaitingForApproval = false;
+                    currentRideId = null;
+                  });
+                },
+                child: const Text(
+                  'Cancel Request',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+            ],
           ),
         ],
       ),

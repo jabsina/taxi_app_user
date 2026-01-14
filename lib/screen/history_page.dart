@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../services/api_service.dart';
+import '../models/ride_model.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
@@ -8,30 +10,90 @@ class HistoryPage extends StatefulWidget {
 }
 
 class _HistoryPageState extends State<HistoryPage> {
-  final List<Map<String, dynamic>> rideHistory = [
-    {
-      'user': 'Saniya',
-      'driver': 'Alex',
-      'driverPhone': '8888888888',
-      'userPhone': '9999999999',
-      'pickup': 'MG Road, Kochi',
-      'from': 'Kaloor, Kochi',
-      'to': 'Infopark, Kakkanad',
-      'status': 'Completed',
-      'requestedAt': '2026-01-07 13:39',
-      'assignedAt': '2026-01-07 13:41',
-      'startedAt': '2026-01-07 13:44',
-      'endedAt': '2026-01-07 13:54',
-      'duration': '10 mins',
-      'baseFare': 200,
-      'extraFare': 50,
-    },
-  ];
+  List<Ride> rideHistory = [];
+  bool isLoading = true;
+  String? errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRideHistory();
+  }
+
+  Future<void> _loadRideHistory() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    try {
+      final response = await ApiService.getRideHistory();
+      setState(() {
+        rideHistory = response.rides;
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Failed to load ride history: ${e.toString()}';
+        isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _refreshHistory() async {
+    await _loadRideHistory();
+  }
+
+  Future<void> _cancelRide(String rideId) async {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cancel Ride'),
+        content: const Text('Are you sure you want to cancel this ride?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('No'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context); // Close dialog first
+              try {
+                await ApiService.cancelRide(rideId);
+                // Check if widget is still mounted before showing snackbar
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Ride cancelled successfully'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                  // Automatic refresh after successful cancellation
+                  _refreshHistory();
+                }
+              } catch (e) {
+                // Check if widget is still mounted before showing error
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Failed to cancel ride: ${e.toString()}'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Yes', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar:AppBar(
+      appBar: AppBar(
         elevation: 0,
         backgroundColor: const Color(0xFF0F2A3A),
         centerTitle: false,
@@ -44,6 +106,13 @@ class _HistoryPageState extends State<HistoryPage> {
             letterSpacing: 0.6,
           ),
         ),
+        actions: [
+          IconButton(
+            onPressed: _refreshHistory,
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            tooltip: 'Refresh',
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(
@@ -55,33 +124,67 @@ class _HistoryPageState extends State<HistoryPage> {
 
       backgroundColor: const Color(0xFFF6F2F8),
       body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 20),
+        child: RefreshIndicator(
+          onRefresh: _refreshHistory,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 20),
 
-
-
-            const SizedBox(height: 20),
-
-            /// List
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: rideHistory.length,
-                itemBuilder: (context, index) {
-                  return _historyCard(rideHistory[index]);
-                },
-              ),
-            ),
-          ],
+              if (isLoading)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(32.0),
+                    child: CircularProgressIndicator(),
+                  ),
+                )
+              else if (errorMessage != null)
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      Text(
+                        errorMessage!,
+                        style: const TextStyle(color: Colors.red),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: _loadRideHistory,
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                )
+              else if (rideHistory.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.all(32.0),
+                  child: Center(
+                    child: Text(
+                      'No ride history available',
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                    ),
+                  ),
+                )
+              else
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: rideHistory.length,
+                    itemBuilder: (context, index) {
+                      return _historyCard(rideHistory[index]);
+                    },
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   /// ================= HISTORY CARD =================
-  Widget _historyCard(Map<String, dynamic> ride) {
+  Widget _historyCard(Ride ride) {
     return GestureDetector(
       onTap: () => _showRideDetails(ride),
       child: Container(
@@ -105,7 +208,7 @@ class _HistoryPageState extends State<HistoryPage> {
               children: [
                 Expanded(
                   child: Text(
-                    '${ride['from']} → ${ride['to']}',
+                    '${ride.pickupAddress} → ${ride.dropAddress ?? 'Destination'}',
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -113,18 +216,31 @@ class _HistoryPageState extends State<HistoryPage> {
                     ),
                   ),
                 ),
-                _statusBadge(ride['status']),
+                _statusBadge(ride.status),
+                if (ride.status == 'pending')
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: IconButton(
+                      icon: const Icon(Icons.cancel, color: Colors.red, size: 20),
+                      onPressed: () => _cancelRide(ride.id),
+                      tooltip: 'Cancel Ride',
+                    ),
+                  ),
               ],
             ),
             const SizedBox(height: 10),
             Text(
-              ride['requestedAt'],
+              _formatDateTime(ride.requestedAt),
               style: const TextStyle(fontSize: 14, color: Colors.black54),
             ),
           ],
         ),
       ),
     );
+  }
+
+  String _formatDateTime(DateTime dateTime) {
+    return '${dateTime.day.toString().padLeft(2, '0')}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.year} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
   }
 
   /// ================= STATUS BADGE =================
@@ -157,7 +273,7 @@ class _HistoryPageState extends State<HistoryPage> {
   }
 
   /// ================= BOTTOM SHEET =================
-  void _showRideDetails(Map<String, dynamic> ride) {
+  void _showRideDetails(Ride ride) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -184,9 +300,9 @@ class _HistoryPageState extends State<HistoryPage> {
 
                 const SizedBox(height: 16),
 
-                Text(
-                  ride['driver'],
-                  style: const TextStyle(
+                const Text(
+                  'Ride Details',
+                  style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w600,
                   ),
@@ -194,42 +310,26 @@ class _HistoryPageState extends State<HistoryPage> {
 
                 const SizedBox(height: 16),
 
-                _detailRow(Icons.phone, 'Driver Phone', ride['driverPhone']),
-                _detailRow(Icons.person, 'User Phone', ride['userPhone']),
-                _detailRow(Icons.location_on, 'Pickup', ride['pickup']),
+                _detailRow(Icons.location_on, 'Pickup', ride.pickupAddress),
+                if (ride.dropAddress != null)
+                  _detailRow(Icons.flag, 'Destination', ride.dropAddress!),
 
                 const Divider(height: 32),
 
-                _detailRow(Icons.info, 'Status', ride['status']),
-                _detailRow(Icons.access_time, 'Requested At', ride['requestedAt']),
-                _detailRow(Icons.check_circle, 'Assigned At', ride['assignedAt']),
-                _detailRow(Icons.play_arrow, 'Started At', ride['startedAt']),
-                _detailRow(Icons.stop, 'Ended At', ride['endedAt']),
-                _detailRow(Icons.timer, 'Duration', ride['duration']),
+                _detailRow(Icons.info, 'Status', ride.status),
+                _detailRow(Icons.access_time, 'Requested At', _formatDateTime(ride.requestedAt)),
+                if (ride.assignedAt != null)
+                  _detailRow(Icons.check_circle, 'Assigned At', _formatDateTime(ride.assignedAt!)),
+                if (ride.startedAt != null)
+                  _detailRow(Icons.play_arrow, 'Started At', _formatDateTime(ride.startedAt!)),
+                if (ride.endedAt != null)
+                  _detailRow(Icons.stop, 'Ended At', _formatDateTime(ride.endedAt!)),
+                if (ride.durationMinutes != null)
+                  _detailRow(Icons.timer, 'Duration', '${ride.durationMinutes} minutes'),
 
                 const Divider(height: 32),
 
-                _detailRow(Icons.attach_money, 'Base Fare', '₹ ${ride['baseFare']}'),
-                _detailRow(Icons.add, 'Additional Fare', '₹ ${ride['extraFare']}'),
-
-                const SizedBox(height: 12),
-
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Total Fare',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                    ),
-                    Text(
-                      '₹ ${ride['baseFare'] + ride['extraFare']}',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
+                _detailRow(Icons.attach_money, 'Total Fare', '₹${ride.totalFare}'),
 
                 const SizedBox(height: 24),
 

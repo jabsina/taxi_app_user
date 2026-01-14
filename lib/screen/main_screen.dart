@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'home_page.dart';
 import 'history_page.dart';
-import 'profilescreen.dart';
+import 'profile_page.dart';
+import 'notifications_page.dart';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+  final int initialIndex;
+  
+  const MainScreen({super.key, this.initialIndex = 0});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -13,9 +16,16 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
 
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+  }
+
   final List<Widget> _pages = const [
     HomePage(),
     HistoryPage(),
+    NotificationsPage(),
     ProfilePage(),
   ];
 
@@ -46,6 +56,10 @@ class _MainScreenState extends State<MainScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.history),
             label: 'History',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.notifications),
+            label: 'Notifications',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
