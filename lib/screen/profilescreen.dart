@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'loginscreen.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -10,8 +11,8 @@ class ProfilePage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
 
-      // 🔹 Proper AppBar (professional apps always have this)
-      appBar:AppBar(
+      // 🔹 Proper AppBar
+      appBar: AppBar(
         elevation: 0,
         backgroundColor: const Color(0xFF0F2A3A),
         centerTitle: false,
@@ -77,33 +78,39 @@ class ProfilePage extends StatelessWidget {
 
           const SizedBox(height: 30),
 
-          /// MAIN INFO CARD (THEME COLOR)
+          /// USERNAME CARD
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: primaryColor,
               borderRadius: BorderRadius.circular(20),
             ),
-            child: Column(
-              children: const [
-                _ProfileTile(
-                  icon: Icons.person_outline,
-                  title: 'Username',
-                  value: 'saniya_benny',
-                ),
-                Divider(height: 28, color: Colors.white24),
-                _ProfileTile(
-                  icon: Icons.phone_outlined,
-                  title: 'Phone',
-                  value: '+91 98765 43210',
-                ),
-              ],
+            child: const _ProfileTile(
+              icon: Icons.person_outline,
+              title: 'Username',
+              value: 'saniya_benny',
+            ),
+          ),
+
+          const SizedBox(height: 14),
+
+          /// PHONE CARD
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: primaryColor,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const _ProfileTile(
+              icon: Icons.phone_outlined,
+              title: 'Phone',
+              value: '+91 98765 43210',
             ),
           ),
 
           const SizedBox(height: 30),
 
-          /// OPTIONAL ACTION
+          /// LOGOUT BUTTON (CONNECTED)
           SizedBox(
             height: 50,
             child: ElevatedButton(
@@ -114,7 +121,13 @@ class ProfilePage extends StatelessWidget {
                 ),
               ),
               onPressed: () {
-                // logout later
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const GetStartedPage(),
+                  ),
+                      (route) => false,
+                );
               },
               child: const Text(
                 'Logout',
@@ -132,7 +145,7 @@ class ProfilePage extends StatelessWidget {
   }
 }
 
-/// TILE USED INSIDE THE DARK CARD
+/// TILE USED INSIDE THE BLUE CARDS
 class _ProfileTile extends StatelessWidget {
   final IconData icon;
   final String title;
