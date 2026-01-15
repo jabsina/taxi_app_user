@@ -33,7 +33,7 @@ dev_dependencies:
 flutter_icons:
   android: true
   ios: true
-  image_path: "assets/images/logo.png"
+  image_path: "assets/images/taxi_logo.png"
 
 flutter:
   uses-material-design: true
@@ -41,4 +41,4 @@ flutter:
   assets:
     - assets/images/Profile.png
     - assets/animations/car_loading.json
-    - assets/images/logo.png
+    - assets/images/taxi_logo.png
