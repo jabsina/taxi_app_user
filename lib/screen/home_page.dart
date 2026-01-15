@@ -82,6 +82,7 @@ class _HomePageState extends State<HomePage> {
   Future<void> _callAdminNumber() async {
     const adminNumber = '+919876543210';
     final uri = Uri(scheme: 'tel', path: adminNumber);
+
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
@@ -90,6 +91,20 @@ class _HomePageState extends State<HomePage> {
       );
     }
   }
+
+  void _showCallConfirmationSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return CallConfirmationSheet(
+          onConfirm: _callAdminNumber,
+        );
+      },
+    );
+  }
+
 
   // ---------------- RIDE REQUEST ----------------
   Future<void> _requestRide() async {
