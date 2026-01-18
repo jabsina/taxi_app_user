@@ -156,8 +156,8 @@ class _HomePageState extends State<HomePage> {
 
     } catch (e) {
       final errorMessage = e.toString();
-      
-      if (errorMessage.contains('Authentication failed') || 
+
+      if (errorMessage.contains('Authentication failed') ||
           errorMessage.contains('Please login')) {
         _handleAuthError(errorMessage);
       } else {
@@ -180,7 +180,7 @@ class _HomePageState extends State<HomePage> {
 
     try {
       final ride = await ApiService.getRideStatus(currentRideId!);
-      
+
       if (ride.status == 'assigned' || ride.status == 'started' || ride.status == 'completed') {
         setState(() {
           isWaitingForApproval = false;
@@ -422,17 +422,17 @@ class _HomePageState extends State<HomePage> {
         height: 56,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-          gradient: isRequestingRide 
+          gradient: isRequestingRide
               ? LinearGradient(
-                  colors: [Colors.grey.shade400, Colors.grey.shade500],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                )
+            colors: [Colors.grey.shade400, Colors.grey.shade500],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          )
               : const LinearGradient(
-                  colors: [Color(0xFF0F2A3A), Color(0xFF1A3B5A)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+            colors: [Color(0xFF0F2A3A), Color(0xFF1A3B5A)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.2),
@@ -444,34 +444,34 @@ class _HomePageState extends State<HomePage> {
         child: Center(
           child: isRequestingRide
               ? const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    ),
-                    SizedBox(width: 12),
-                    Text(
-                      'Requesting...',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                )
-              : const Text(
-                  'Request Ride',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600),
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
                 ),
+              ),
+              SizedBox(width: 12),
+              Text(
+                'Requesting...',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          )
+              : const Text(
+            'Request Ride',
+            style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w600),
+          ),
         ),
       ),
     );
