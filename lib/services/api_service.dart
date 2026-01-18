@@ -220,6 +220,14 @@ class ApiService {
       throw Exception('Get ride status error: $e');
     }
   }
+// ✅ UI-friendly login wrapper
+  static Future<bool> loginUser({
+    required String name,
+    required String phone,
+  }) async {
+    final response = await login(phone, name);
+    return response.token.isNotEmpty;
+  }
 
   static Future<RideHistoryResponse> getRideHistory({
     int limit = 20,

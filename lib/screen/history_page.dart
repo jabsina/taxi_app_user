@@ -240,7 +240,13 @@ class _HistoryPageState extends State<HistoryPage> {
   }
 
   String _formatDateTime(DateTime dateTime) {
-    return '${dateTime.day.toString().padLeft(2, '0')}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.year} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+    final local = dateTime.toLocal(); // ✅ VERY IMPORTANT
+
+    return '${local.day.toString().padLeft(2, '0')}-'
+        '${local.month.toString().padLeft(2, '0')}-'
+        '${local.year} '
+        '${local.hour.toString().padLeft(2, '0')}:'
+        '${local.minute.toString().padLeft(2, '0')}';
   }
 
   /// ================= STATUS BADGE =================

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
+import 'package:taxi_app_user/screen/authcheck_page.dart';
 import 'loginscreen.dart';
 
 class LandingScreen extends StatefulWidget {
@@ -14,17 +15,17 @@ class _LandingScreenState extends State<LandingScreen> {
   void initState() {
     super.initState();
 
-    // Navigate after animation duration
     Future.delayed(const Duration(seconds: 3), () {
+      if (!mounted) return; // ✅ IMPORTANT
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => const GetStartedPage(),
+          builder: (_) => const AuthcheckScreen(),
         ),
       );
     });
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
