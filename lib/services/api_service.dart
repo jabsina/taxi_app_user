@@ -7,7 +7,7 @@ import '../models/notification_model.dart';
 import '../models/user_model.dart';
 
 class ApiService {
-  static const String baseUrl = "http://10.0.2.2:3000"; // Replace with actual base URL
+  static const String baseUrl = "https://api.lenienttree.org"; // Replace with actual base URL
   
   static const String _tokenKey = 'user_token';
   static const String _userIdKey = 'user_id';
@@ -219,6 +219,14 @@ class ApiService {
     } catch (e) {
       throw Exception('Get ride status error: $e');
     }
+  }
+// ✅ UI-friendly login wrapper
+  static Future<bool> loginUser({
+    required String name,
+    required String phone,
+  }) async {
+    final response = await login(phone, name);
+    return response.token.isNotEmpty;
   }
 
   static Future<RideHistoryResponse> getRideHistory({

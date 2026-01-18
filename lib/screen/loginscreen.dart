@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:taxi_app_user/screen/home_page.dart';
 import 'package:taxi_app_user/screen/main_screen.dart';
+import 'package:taxi_app_user/screen/splash_screen.dart';
+import 'package:taxi_app_user/services/secure_storage_service.dart';
 import '../../services/notifications_services.dart';
 import '../../services/api_service.dart';
 
@@ -24,51 +27,53 @@ class _GetStartedPageState extends State<GetStartedPage> {
     _phoneController.dispose();
     super.dispose();
   }
+  Future<void> _login() async {
+    if (!_formKey.currentState!.validate()) return;
 
-  void _login() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-      });
+    FocusScope.of(context).unfocus();
+    setState(() => _isLoading = true);
 
-      try {
-        final phoneNumber = '+${_phoneController.text}';
-        final name = _usernameController.text.trim();
-        
-        final loginResponse = await ApiService.login(phoneNumber, name);
+    try {
+      final success = await ApiService.loginUser(
+        name: _usernameController.text.trim(),
+        phone: _phoneController.text.trim(),
+      );
 
-        // 🔔 NOTIFICATION AFTER LOGIN
-        NotificationService.show(
-          title: 'Login Successful',
-          body: 'Welcome, ${loginResponse.user.name}!',
-        );
-
-        if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const MainScreen(),
-            ),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Login failed: ${e.toString()}'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      } finally {
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-        }
+      if (success != true) {
+        throw 'Login failed';
       }
+
+      if (!mounted) return;
+
+      NotificationService.show(
+        title: 'Login Successful ✅',
+        body: 'Welcome!',
+      );
+
+      await SecureStorageService.saveLogin(
+        token: 'user_logged_in',
+        userId: _phoneController.text.trim(),
+      );
+
+      if (!mounted) return;
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const HomePage()),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
+
+
 
   @override
   Widget build(BuildContext context) {
