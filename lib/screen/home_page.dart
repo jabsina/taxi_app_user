@@ -92,19 +92,24 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _showCallConfirmationSheet() {
+  // ---------------- REQUEST BUTTON ACTION ----------------
+  void _onRequestRide() {
+    if (isRequestingRide) return;
+
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (context) {
+      backgroundColor: Colors.transparent,
+      builder: (_) {
         return CallConfirmationSheet(
-          onConfirm: _callAdminNumber,
+          onConfirm: () async {
+            await _callAdminNumber(); // OPEN DIALER
+            await _requestRide();     // REQUEST RIDE
+          },
         );
       },
     );
   }
-
 
   // ---------------- RIDE REQUEST ----------------
   Future<void> _requestRide() async {
@@ -196,10 +201,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _onRequestRide() {
-    if (isRequestingRide) return;
-    _requestRide();
-  }
+
 
   void _handleAuthError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
