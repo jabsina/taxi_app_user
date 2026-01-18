@@ -112,18 +112,20 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 )
               else if (userProfile != null)
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      children: [
-                        _profileCard(),
-                        const SizedBox(height: 20),
-                        _statsCard(),
-                      ],
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          _profileCard(),
+                          const SizedBox(height: 20),
+                          _statsCard(),
+                          const SizedBox(height: 30),
+                          _logoutButton(context),
+                        ],
+                      ),
                     ),
                   ),
-                ),
             ],
           ),
         ),
@@ -345,6 +347,39 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _logoutButton(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: SizedBox(
+        width: double.infinity,
+        height: 52,
+        child: ElevatedButton.icon(
+          onPressed: () async {
+            Navigator.of(context).pushNamedAndRemoveUntil(
+              '/login',
+                  (route) => false,
+            );
+          },
+          icon: const Icon(Icons.logout, color: Colors.white),
+          label: const Text(
+            'Logout',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF0F2A3A),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
+        ),
       ),
     );
   }
