@@ -82,7 +82,6 @@ class _HomePageState extends State<HomePage> {
   Future<void> _callAdminNumber() async {
     const adminNumber = '+919876543210';
     final uri = Uri(scheme: 'tel', path: adminNumber);
-
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
@@ -90,25 +89,6 @@ class _HomePageState extends State<HomePage> {
         const SnackBar(content: Text('Cannot launch dialer')),
       );
     }
-  }
-
-  // ---------------- REQUEST BUTTON ACTION ----------------
-  void _onRequestRide() {
-    if (isRequestingRide) return;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) {
-        return CallConfirmationSheet(
-          onConfirm: () async {
-            await _callAdminNumber(); // OPEN DIALER
-            await _requestRide();     // REQUEST RIDE
-          },
-        );
-      },
-    );
   }
 
   // ---------------- RIDE REQUEST ----------------
@@ -142,12 +122,7 @@ class _HomePageState extends State<HomePage> {
         body: response.message,
       );
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(response.message),
-          backgroundColor: Colors.green,
-        ),
-      );
+
 
       // Navigate to ride history after successful ride request
       if (mounted) {
@@ -201,7 +176,10 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-
+  void _onRequestRide() {
+    if (isRequestingRide) return;
+    _requestRide();
+  }
 
   void _handleAuthError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
