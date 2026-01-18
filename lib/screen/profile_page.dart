@@ -421,38 +421,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _logoutButton(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: SizedBox(
-        width: double.infinity,
-        height: 52,
-        child: ElevatedButton.icon(
-          onPressed: () async {
-            Navigator.of(context).pushNamedAndRemoveUntil(
-              '/login',
-                  (route) => false,
-            );
-          },
-          icon: const Icon(Icons.logout, color: Colors.white),
-          label: const Text(
-            'Logout',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
-            ),
-          ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF0F2A3A),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 
   String _formatDate(DateTime dateTime) {
     return '${dateTime.day.toString().padLeft(2, '0')}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.year}';
