@@ -92,7 +92,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  // ---------------- REQUEST BUTTON ACTION ----------------
+// ---------------- REQUEST BUTTON ACTION ----------------
   void _onRequestRide() {
     if (isRequestingRide) return;
 
@@ -103,13 +103,17 @@ class _HomePageState extends State<HomePage> {
       builder: (_) {
         return CallConfirmationSheet(
           onConfirm: () async {
-            await _callAdminNumber(); // OPEN DIALER
-            await _requestRide();     // REQUEST RIDE
+            await _callAdminNumber(); // open dialer
+            await _requestRide();     // request ride
           },
         );
       },
     );
   }
+
+
+
+
 
   // ---------------- RIDE REQUEST ----------------
   Future<void> _requestRide() async {
@@ -230,7 +234,7 @@ class _HomePageState extends State<HomePage> {
           backgroundColor: const Color(0xFF0F2A3A),
           centerTitle: false,
           title: const Text(
-            'Taxi App',
+            'TraveLink',
             style: TextStyle(
               color: Colors.white,
               fontSize: 25,

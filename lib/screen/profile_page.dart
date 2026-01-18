@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:taxi_app_user/screen/loginscreen.dart';
 import '../services/api_service.dart';
 import '../models/user_model.dart';
-
+import '../services/secure_storage_service.dart';
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
@@ -39,6 +40,49 @@ class _ProfilePageState extends State<ProfilePage> {
       });
     }
   }
+
+  /// 🔐 REAL LOGOUT (UNCHANGED)
+  Future<void> _logout() async {
+    await SecureStorageService.logout();
+
+    if (!mounted) return;
+
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const GetStartedPage()),
+          (route) => false,
+    );
+  }
+
+  void _showLogoutDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _logout();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF0B2A3A),
+            ),
+            child: const Text(
+              'Logout',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
 
   Future<void> _refreshProfile() async {
     await _loadUserProfile();
@@ -112,18 +156,20 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 )
               else if (userProfile != null)
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      children: [
-                        _profileCard(),
-                        const SizedBox(height: 20),
-                        _statsCard(),
-                      ],
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          _profileCard(),
+                          const SizedBox(height: 20),
+                          _statsCard(),
+                          const SizedBox(height: 30),
+                          _logoutButton(context),
+                        ],
+                      ),
                     ),
                   ),
-                ),
             ],
           ),
         ),
@@ -348,6 +394,33 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
   }
+  Widget _logoutButton(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: SizedBox(
+        width: double.infinity,
+        height: 48,
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF0B2A3A),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          onPressed: _showLogoutDialog, // ✅ IMPORTANT
+          child: const Text(
+            'Logout',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
 
   String _formatDate(DateTime dateTime) {
     return '${dateTime.day.toString().padLeft(2, '0')}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.year}';

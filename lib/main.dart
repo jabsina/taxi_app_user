@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:taxi_app_user/screen/authcheck_page.dart';
 
 import 'package:taxi_app_user/screen/home_page.dart';
 import 'package:taxi_app_user/screen/landingscreen.dart';
@@ -23,7 +24,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Flutter Demo',
+      title: 'TraveLink',
       theme: ThemeData(
         // This is the theme of your application.
         //
