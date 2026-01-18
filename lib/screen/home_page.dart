@@ -233,7 +233,7 @@ class _HomePageState extends State<HomePage> {
           backgroundColor: const Color(0xFF0F2A3A),
           centerTitle: false,
           title: const Text(
-            'Taxi App',
+            'TraveLink',
             style: TextStyle(
               color: Colors.white,
               fontSize: 25,
