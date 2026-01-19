@@ -27,55 +27,30 @@ class _HomePageState extends State<HomePage> {
   final TextEditingController pickupController = TextEditingController();
   final TextEditingController destinationController = TextEditingController();
 
-  List<dynamic> pickupSuggestions = [];
-  List<dynamic> destinationSuggestions = [];
-
-  bool pickupSelected = false;
-  bool destinationSelected = false;
-
   @override
   void initState() {
     super.initState();
-    // Auto-fetch removed
   }
 
-  // ---------------- SEARCH ----------------
-  Future<void> searchPickupPlaces(String query) async {
-    if (query.isEmpty) {
-      setState(() => pickupSuggestions = []);
-      return;
-    }
+  // ---------------- LOCATION RESOLVE (NO SUGGESTIONS) ----------------
+  Future<Map<String, dynamic>?> getLocationFromText(String query) async {
+    if (query.trim().isEmpty) return null;
 
     final url = Uri.parse(
-        'https://nominatim.openstreetmap.org/search?q=$query&format=json&addressdetails=1&limit=5&countrycodes=in');
+      'https://nominatim.openstreetmap.org/search'
+          '?q=$query&format=json&limit=1&countrycodes=in',
+    );
 
-    final response = await http.get(url, headers: {'User-Agent': 'taxi-app'});
-
-    if (response.statusCode == 200) {
-      setState(() {
-        pickupSuggestions = json.decode(response.body);
-        pickupSelected = false;
-      });
-    }
-  }
-
-  Future<void> searchDestinationPlaces(String query) async {
-    if (query.isEmpty) {
-      setState(() => destinationSuggestions = []);
-      return;
-    }
-
-    final url = Uri.parse(
-        'https://nominatim.openstreetmap.org/search?q=$query&format=json&addressdetails=1&limit=5&countrycodes=in');
-
-    final response = await http.get(url, headers: {'User-Agent': 'taxi-app'});
+    final response = await http.get(
+      url,
+      headers: {'User-Agent': 'taxi-app'},
+    );
 
     if (response.statusCode == 200) {
-      setState(() {
-        destinationSuggestions = json.decode(response.body);
-        destinationSelected = false;
-      });
+      final data = json.decode(response.body);
+      if (data.isNotEmpty) return data[0];
     }
+    return null;
   }
 
   // ---------------- CALL ADMIN ----------------
@@ -92,7 +67,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-// ---------------- REQUEST BUTTON ACTION ----------------
+  // ---------------- REQUEST BUTTON ----------------
   void _onRequestRide() {
     if (isRequestingRide) return;
 
@@ -103,32 +78,27 @@ class _HomePageState extends State<HomePage> {
       builder: (_) {
         return CallConfirmationSheet(
           onConfirm: () async {
-            await _callAdminNumber(); // open dialer
-            await _requestRide();     // request ride
+            await _callAdminNumber();
+            await _requestRide();
           },
         );
       },
     );
   }
 
-
-
-
-
   // ---------------- RIDE REQUEST ----------------
   Future<void> _requestRide() async {
     FocusScope.of(context).unfocus();
 
-    if (!pickupSelected || !destinationSelected) {
+    if (pickupController.text.trim().isEmpty ||
+        destinationController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Select pickup & destination')),
+        const SnackBar(content: Text('Enter pickup & destination')),
       );
       return;
     }
 
-    setState(() {
-      isRequestingRide = true;
-    });
+    setState(() => isRequestingRide = true);
 
     try {
       final response = await ApiService.requestRide(
@@ -146,61 +116,32 @@ class _HomePageState extends State<HomePage> {
         body: response.message,
       );
 
-
-
-      // Navigate to ride history after successful ride request
       if (mounted) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => const MainScreen(initialIndex: 1), // Index 1 is History
+            builder: (_) => const MainScreen(initialIndex: 1),
           ),
         );
       }
-
     } catch (e) {
-      final errorMessage = e.toString();
+      final msg = e.toString();
 
-      if (errorMessage.contains('Authentication failed') ||
-          errorMessage.contains('Please login')) {
-        _handleAuthError(errorMessage);
+      if (msg.contains('Authentication failed') ||
+          msg.contains('Please login')) {
+        _handleAuthError(msg);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Ride request failed: $errorMessage'),
+            content: Text('Ride request failed: $msg'),
             backgroundColor: Colors.red,
           ),
         );
       }
     } finally {
-      setState(() {
-        isRequestingRide = false;
-      });
+      setState(() => isRequestingRide = false);
     }
   }
-
-  Future<void> _checkRideStatus() async {
-    if (currentRideId == null) return;
-
-    try {
-      final ride = await ApiService.getRideStatus(currentRideId!);
-
-      if (ride.status == 'assigned' || ride.status == 'started' || ride.status == 'completed') {
-        setState(() {
-          isWaitingForApproval = false;
-        });
-
-        NotificationService.show(
-          title: 'Ride Status Updated',
-          body: 'Your ride is ${ride.status}',
-        );
-      }
-    } catch (e) {
-      print('Error checking ride status: $e');
-    }
-  }
-
-
 
   void _handleAuthError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -213,7 +154,7 @@ class _HomePageState extends State<HomePage> {
           onPressed: () {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => const GetStartedPage()),
+              MaterialPageRoute(builder: (_) => const GetStartedPage()),
             );
           },
         ),
@@ -227,74 +168,42 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       resizeToAvoidBottomInset: true,
       backgroundColor: Colors.transparent,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(64),
-        child: AppBar(
-          elevation: 0,
-          backgroundColor: const Color(0xFF0F2A3A),
-          centerTitle: false,
-          title: const Text(
-            'TraveLink',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 25,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.6,
-            ),
-          ),
-          bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(1),
-            child: Container(
-              height: 1,
-              color: Colors.white.withOpacity(0.08),
-            ),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF0F2A3A),
+        title: const Text(
+          'TraveLink',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 25,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ),
-      body: Stack(
-        children: [
-          Container(
-            width: double.infinity,
-            height: double.infinity,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFFF6F2F8), Color(0xFFEFEAF3)],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            _pickupBox(),
+            const SizedBox(height: 20),
+            _destinationBox(),
+            const SizedBox(height: 20),
+            GestureDetector(
+              onTap: _onRequestRide,
+              child: _requestRideButton(),
             ),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-              child: Column(
-                children: [
-                  _pickupBox(),
-                  if (pickupSuggestions.isNotEmpty) _pickupSuggestionList(),
-                  const SizedBox(height: 20),
-                  _destinationBox(),
-                  if (destinationSuggestions.isNotEmpty)
-                    _destinationSuggestionList(),
-                  const SizedBox(height: 20),
-                  GestureDetector(
-                    onTap: _onRequestRide,
-                    child: _requestRideButton(),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  // ---------------- WIDGETS ----------------
+  // ---------------- INPUT BOXES ----------------
   Widget _pickupBox() {
     return _inputBox(
       icon: Icons.my_location,
       iconColor: Colors.green,
       controller: pickupController,
       hint: pickupLocationText,
-      onChanged: searchPickupPlaces,
     );
   }
 
@@ -304,7 +213,6 @@ class _HomePageState extends State<HomePage> {
       iconColor: Colors.redAccent,
       controller: destinationController,
       hint: 'Enter destination',
-      onChanged: searchDestinationPlaces,
     );
   }
 
@@ -313,11 +221,9 @@ class _HomePageState extends State<HomePage> {
     required Color iconColor,
     required TextEditingController controller,
     required String hint,
-    required Function(String) onChanged,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
@@ -343,14 +249,9 @@ class _HomePageState extends State<HomePage> {
           Expanded(
             child: TextField(
               controller: controller,
-              onChanged: onChanged,
-              style: const TextStyle(
-                  fontSize: 16, fontWeight: FontWeight.w500),
               decoration: InputDecoration(
                 hintText: hint,
-                hintStyle: const TextStyle(color: Colors.black54),
                 border: InputBorder.none,
-                isDense: true,
               ),
             ),
           ),
@@ -359,116 +260,28 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _pickupSuggestionList() {
-    return _suggestionList(pickupSuggestions, (place) {
-      setState(() {
-        pickupController.text = place['display_name'];
-        pickupSuggestions = [];
-        pickupSelected = true;
-      });
-    });
-  }
-
-  Widget _destinationSuggestionList() {
-    return _suggestionList(destinationSuggestions, (place) {
-      setState(() {
-        destinationController.text = place['display_name'];
-        destinationSuggestions = [];
-        destinationSelected = true;
-      });
-    });
-  }
-
-  Widget _suggestionList(List<dynamic> list, Function(dynamic) onTap) {
-    return Container(
-      margin: const EdgeInsets.only(top: 8),
-      height: 220,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ListView.separated(
-        physics: const BouncingScrollPhysics(),
-        itemCount: list.length,
-        separatorBuilder: (_, __) => const Divider(height: 1),
-        itemBuilder: (context, index) {
-          final place = list[index];
-          return ListTile(
-            title: Text(place['display_name'], maxLines: 2),
-            onTap: () => onTap(place),
-          );
-        },
-      ),
-    );
-  }
-
+  // ---------------- BUTTON ----------------
   Widget _requestRideButton() {
-    return GestureDetector(
-      onTap: isRequestingRide ? null : _onRequestRide,
-      child: Container(
-        height: 56,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          gradient: isRequestingRide
-              ? LinearGradient(
-            colors: [Colors.grey.shade400, Colors.grey.shade500],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          )
-              : const LinearGradient(
-            colors: [Color(0xFF0F2A3A), Color(0xFF1A3B5A)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
+    return Container(
+      height: 56,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF0F2A3A), Color(0xFF1A3B5A)],
         ),
-        child: Center(
-          child: isRequestingRide
-              ? const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 2,
-                ),
-              ),
-              SizedBox(width: 12),
-              Text(
-                'Requesting...',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          )
-              : const Text(
-            'Request Ride',
-            style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.w600),
+      ),
+      child: Center(
+        child: isRequestingRide
+            ? const CircularProgressIndicator(color: Colors.white)
+            : const Text(
+          'Request Ride',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ),
     );
   }
-
 }
