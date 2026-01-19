@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'home_page.dart';
 import 'history_page.dart';
-import 'profile_page.dart';
 import 'notifications_page.dart';
+import 'profile_page.dart';
 
 class MainScreen extends StatefulWidget {
   final int initialIndex;
-  
+
   const MainScreen({super.key, this.initialIndex = 0});
 
   @override
@@ -14,28 +14,50 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _currentIndex = 0;
+  late int _currentIndex;
+  bool _ready = false;
 
   @override
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
+
+    // 🔥 Ensure first frame completes before building pages
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() {
+        _ready = true;
+      });
+    });
   }
 
-  final List<Widget> _pages = const [
-    HomePage(),
-    HistoryPage(),
-    NotificationsPage(),
-    ProfilePage(),
-  ];
+  Widget _buildPage(int index) {
+    switch (index) {
+      case 0:
+        return const HomePage();
+      case 1:
+        return const HistoryPage();
+      case 2:
+        return const NotificationsPage();
+      case 3:
+        return const ProfilePage();
+      default:
+        return const HomePage();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    // 🔥 BLOCK UI until safe to render
+    if (!_ready) {
+      return const Scaffold(
+        backgroundColor: Colors.white,
+        body: SizedBox.shrink(),
+      );
+    }
+
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _pages,
-      ),
+      body: _buildPage(_currentIndex),
 
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,

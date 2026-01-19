@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:taxi_app_user/screen/loginscreen.dart';
 import 'package:taxi_app_user/screen/main_screen.dart';
-import 'package:taxi_app_user/screen/splash_screen.dart';
 import '../services/secure_storage_service.dart';
-
-import 'home_page.dart';
 
 class AuthcheckScreen extends StatefulWidget {
   const AuthcheckScreen({super.key});
@@ -14,39 +11,42 @@ class AuthcheckScreen extends StatefulWidget {
 }
 
 class _AuthcheckScreenState extends State<AuthcheckScreen> {
+  bool _checking = true;
 
   @override
   void initState() {
     super.initState();
-    _checkLogin();
+
+    // 🔥 Wait for FIRST FRAME before checking login
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkLogin();
+    });
   }
 
   Future<void> _checkLogin() async {
-    bool loggedIn = await SecureStorageService.isLoggedIn();
+    final loggedIn = await SecureStorageService.isLoggedIn();
 
     if (!mounted) return;
 
-    if (loggedIn) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const MainScreen()),
-      );
-    } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const GetStartedPage()),
-      );
-    }
+    setState(() => _checking = false);
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+        loggedIn ? const MainScreen() : const GetStartedPage(),
+      ),
+    );
   }
 
-  // ✅ THIS WAS MISSING
   @override
   Widget build(BuildContext context) {
+    // 🔥 Block UI completely until auth resolves
     return const Scaffold(
+      backgroundColor: Colors.white,
       body: Center(
         child: CircularProgressIndicator(),
       ),
     );
   }
 }
-

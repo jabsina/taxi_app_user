@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:taxi_app_user/screen/authcheck_page.dart';
-import 'loginscreen.dart';
 
 class LandingScreen extends StatefulWidget {
   const LandingScreen({super.key});
@@ -15,27 +14,46 @@ class _LandingScreenState extends State<LandingScreen> {
   void initState() {
     super.initState();
 
-    Future.delayed(const Duration(seconds: 3), () {
-      if (!mounted) return; // ✅ IMPORTANT
+    // ✅ Wait until FIRST FRAME is rendered
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(seconds: 3), () {
+        if (!mounted) return;
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const AuthcheckScreen(),
-        ),
-      );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const AuthcheckScreen(),
+          ),
+        );
+      });
     });
   }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return const Scaffold(
+      // ✅ MATCH Android splash + app background
+      backgroundColor: Colors.white,
+
       body: Center(
-        child: Lottie.asset(
-          'assets/animations/car_loading.json',
+        child: SizedBox(
           width: 220,
-          repeat: true,
+          child: _SplashLottie(),
         ),
       ),
+    );
+  }
+}
+
+class _SplashLottie extends StatelessWidget {
+  const _SplashLottie();
+
+  @override
+  Widget build(BuildContext context) {
+    return Lottie.asset(
+      'assets/animations/car_loading.json',
+      repeat: true,
+      fit: BoxFit.contain,
     );
   }
 }

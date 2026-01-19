@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:taxi_app_user/screen/home_page.dart';
 import 'package:taxi_app_user/screen/main_screen.dart';
-import 'package:taxi_app_user/screen/splash_screen.dart';
 import 'package:taxi_app_user/services/secure_storage_service.dart';
 import '../../services/notifications_services.dart';
 import '../../services/api_service.dart';
@@ -27,6 +25,7 @@ class _GetStartedPageState extends State<GetStartedPage> {
     _phoneController.dispose();
     super.dispose();
   }
+
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -39,10 +38,14 @@ class _GetStartedPageState extends State<GetStartedPage> {
         _usernameController.text.trim(),
       );
 
-
       if (loginResponse.token.isEmpty) {
         throw 'Login failed';
       }
+
+      await SecureStorageService.saveLogin(
+        token: loginResponse.token,
+        userId: _phoneController.text.trim(),
+      );
 
       if (!mounted) return;
 
@@ -51,16 +54,13 @@ class _GetStartedPageState extends State<GetStartedPage> {
         body: 'Welcome!',
       );
 
-      await SecureStorageService.saveLogin(
-        token: 'user_logged_in',
-        userId: _phoneController.text.trim(),
-      );
-
-      if (!mounted) return;
-
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const HomePage()),
-      );
+      // 🔥 FINAL FIX — RESET NAVIGATION STACK
+      Future.microtask(() {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const MainScreen()),
+              (route) => false,
+        );
+      });
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -74,15 +74,10 @@ class _GetStartedPageState extends State<GetStartedPage> {
     }
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-
-      /// Proper AppBar (this alone changes the feel a LOT)
-
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -105,7 +100,6 @@ class _GetStartedPageState extends State<GetStartedPage> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  /// TITLE
                   const Text(
                     'Sign in',
                     textAlign: TextAlign.center,
@@ -114,9 +108,7 @@ class _GetStartedPageState extends State<GetStartedPage> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-
                   const SizedBox(height: 8),
-
                   const Text(
                     'Enter your details to continue',
                     textAlign: TextAlign.center,
@@ -125,10 +117,9 @@ class _GetStartedPageState extends State<GetStartedPage> {
                       color: Colors.grey,
                     ),
                   ),
-
                   const SizedBox(height: 32),
 
-                  /// USERNAME
+                  /// NAME
                   TextFormField(
                     controller: _usernameController,
                     decoration: InputDecoration(
@@ -142,9 +133,7 @@ class _GetStartedPageState extends State<GetStartedPage> {
                       ),
                     ),
                     validator: (value) =>
-                    value == null || value.isEmpty
-                        ? 'Enter name'
-                        : null,
+                    value == null || value.isEmpty ? 'Enter name' : null,
                   ),
 
                   const SizedBox(height: 16),
@@ -178,7 +167,6 @@ class _GetStartedPageState extends State<GetStartedPage> {
 
                   const SizedBox(height: 28),
 
-                  /// CONTINUE BUTTON
                   ElevatedButton(
                     onPressed: _isLoading ? null : _login,
                     style: ElevatedButton.styleFrom(
@@ -191,22 +179,22 @@ class _GetStartedPageState extends State<GetStartedPage> {
                     ),
                     child: _isLoading
                         ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
                         : const Text(
-                            'CONTINUE',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              letterSpacing: 1,
-                            ),
-                          ),
+                      'CONTINUE',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        letterSpacing: 1,
+                      ),
+                    ),
                   ),
                 ],
               ),
