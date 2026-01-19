@@ -34,12 +34,13 @@ class _GetStartedPageState extends State<GetStartedPage> {
     setState(() => _isLoading = true);
 
     try {
-      final success = await ApiService.loginUser(
-        name: _usernameController.text.trim(),
-        phone: _phoneController.text.trim(),
+      final loginResponse = await ApiService.login(
+        _phoneController.text.trim(),
+        _usernameController.text.trim(),
       );
 
-      if (success != true) {
+
+      if (loginResponse.token.isEmpty) {
         throw 'Login failed';
       }
 
