@@ -7,7 +7,7 @@ import '../models/notification_model.dart';
 import '../models/user_model.dart';
 
 class ApiService {
-  static const String baseUrl = "http://10.0.2.2:3000"; // Replace with actual base URL
+  static const String baseUrl = "https://api.lenienttree.org"; // Replace with actual base URL
   
   static const String _tokenKey = 'user_token';
   static const String _userIdKey = 'user_id';

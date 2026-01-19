@@ -282,13 +282,6 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
-          if (isWaitingForApproval)
-            Positioned.fill(
-              child: Container(
-                color: Colors.black.withOpacity(0.4),
-                child: Center(child: _waitingApprovalCard()),
-              ),
-            ),
         ],
       ),
     );
@@ -478,50 +471,4 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _waitingApprovalCard() {
-    return Container(
-      width: 300,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const CircularProgressIndicator(
-            color: Color(0xFF0F2A3A),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Waiting for approval',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextButton(
-                onPressed: _checkRideStatus,
-                child: const Text('Check Status'),
-              ),
-              const SizedBox(width: 8),
-              GestureDetector(
-                onTap: () {
-                  setState(() {
-                    isWaitingForApproval = false;
-                    currentRideId = null;
-                  });
-                },
-                child: const Text(
-                  'Cancel Request',
-                  style: TextStyle(color: Colors.red),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
 }
