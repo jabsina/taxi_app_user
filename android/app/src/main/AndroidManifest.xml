@@ -27,7 +27,7 @@
     </queries>
 
     <application
-        android:label="taxi_app_user"
+        android:label="Travelink"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
 
