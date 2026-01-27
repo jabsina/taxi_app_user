@@ -34,12 +34,18 @@ class _ProfilePageState extends State<ProfilePage> {
         isLoading = false;
       });
     } catch (e) {
+      // 🔥 IMPORTANT FIX — prevents error flash
+      if (e is SessionExpiredException) {
+        return; // redirect already handled globally
+      }
+
       setState(() {
         errorMessage = 'Failed to load profile: ${e.toString()}';
         isLoading = false;
       });
     }
   }
+
 
   /// 🔐 REAL LOGOUT (UNCHANGED)
   Future<void> _logout() async {
@@ -420,6 +426,7 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
   }
+
 
 
   String _formatDate(DateTime dateTime) {

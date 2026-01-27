@@ -25,7 +25,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
       isLoading = true;
       errorMessage = null;
     });
-
     try {
       final response = await ApiService.getNotifications();
       setState(() {
@@ -33,12 +32,19 @@ class _NotificationsPageState extends State<NotificationsPage> {
         isLoading = false;
       });
     } catch (e) {
+      // 🔥 SESSION EXPIRED → ApiService already redirected to Login
+      if (e is SessionExpiredException) {
+        return;
+      }
+
       setState(() {
         errorMessage = 'Failed to load notifications: ${e.toString()}';
         isLoading = false;
       });
     }
   }
+
+
 
   Future<void> _refreshNotifications() async {
     await _loadNotifications();

@@ -25,4 +25,8 @@ class SecureStorageService {
   static Future<void> logout() async {
     await _storage.deleteAll();
   }
+  static Future<void> clear() async {
+    await _storage.deleteAll();
+  }
+
 }

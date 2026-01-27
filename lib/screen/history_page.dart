@@ -33,12 +33,11 @@ class _HistoryPageState extends State<HistoryPage> {
         isLoading = false;
       });
     } catch (e) {
-      setState(() {
-        errorMessage = 'Failed to load ride history: ${e.toString()}';
-        isLoading = false;
-      });
-    }
-  }
+      // 🔥 SESSION EXPIRED → ApiService already redirected to Login
+      if (e is SessionExpiredException) {
+        return;
+      }
+  }}
 
   Future<void> _refreshHistory() async {
     await _loadRideHistory();
@@ -72,15 +71,18 @@ class _HistoryPageState extends State<HistoryPage> {
                   _refreshHistory();
                 }
               } catch (e) {
-                // Check if widget is still mounted before showing error
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Failed to cancel ride: ${e.toString()}'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
+                // 🔥 Ignore session expiry here too
+                if (e is SessionExpiredException) {
+                  return;
                 }
+
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Failed to cancel ride: ${e.toString()}'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
               }
             },
             child: const Text('Yes', style: TextStyle(color: Colors.red)),

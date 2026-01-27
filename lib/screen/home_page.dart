@@ -9,6 +9,7 @@ import 'package:taxi_app_user/models/user_model.dart';
 import 'package:taxi_app_user/screen/loginscreen.dart';
 import 'package:taxi_app_user/screen/main_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../services/api_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -125,20 +126,20 @@ class _HomePageState extends State<HomePage> {
         );
       }
     } catch (e) {
-      final msg = e.toString();
-
-      if (msg.contains('Authentication failed') ||
-          msg.contains('Please login')) {
-        _handleAuthError(msg);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Ride request failed: $msg'),
-            backgroundColor: Colors.red,
-          ),
-        );
+      // 🔥 SESSION EXPIRED → ApiService already redirected to Login
+      if (e is SessionExpiredException) {
+        return;
       }
-    } finally {
+
+      // Normal error (network, validation, etc.)
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Ride request failed: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+    finally {
       setState(() => isRequestingRide = false);
     }
   }
@@ -191,6 +192,7 @@ class _HomePageState extends State<HomePage> {
               onTap: _onRequestRide,
               child: _requestRideButton(),
             ),
+
           ],
         ),
       ),

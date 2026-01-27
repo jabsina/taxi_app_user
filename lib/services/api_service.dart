@@ -1,16 +1,25 @@
 import 'dart:convert';
 import 'dart:io';
+
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../models/ride_model.dart';
 import '../models/notification_model.dart';
 import '../models/user_model.dart';
+import '../main.dart'; // navigatorKey
+
+// 🔥 Custom exception to avoid UI error flash
+class SessionExpiredException implements Exception {}
 
 class ApiService {
-  static const String baseUrl = "https://api.lenienttree.org"; // Replace with actual base URL
-  
+  static const String baseUrl = "https://api.lenienttree.org";
+
   static const String _tokenKey = 'user_token';
   static const String _userIdKey = 'user_id';
+
+  // ================= AUTH STORAGE =================
 
   static Future<void> saveAuthToken(String token) async {
     final prefs = await SharedPreferences.getInstance();
@@ -27,33 +36,24 @@ class ApiService {
     await prefs.setString(_userIdKey, userId);
   }
 
-  static Future<String?> getUserId() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_userIdKey);
-  }
-
   static Future<void> clearAuthData() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
     await prefs.remove(_userIdKey);
   }
 
-  static Future<bool> isAuthenticated() async {
-    final token = await getAuthToken();
-    if (token == null || token.isEmpty) {
-      return false;
-    }
-    
-    // Basic token validation - JWT tokens have 3 parts separated by dots
-    final parts = token.split('.');
-    if (parts.length != 3) {
-      print('Invalid token format: $token');
-      await clearAuthData();
-      return false;
-    }
-    
-    return true;
+  // ================= SESSION HANDLER =================
+
+  static Future<void> _handleSessionExpired() async {
+    await clearAuthData();
+
+    navigatorKey.currentState?.pushNamedAndRemoveUntil(
+      '/login',
+          (route) => false,
+    );
   }
+
+  // ================= HEADERS =================
 
   static Future<Map<String, String>> _getHeaders({bool includeAuth = true}) async {
     final headers = <String, String>{
@@ -62,34 +62,34 @@ class ApiService {
 
     if (includeAuth) {
       final token = await getAuthToken();
-      if (token != null) {
+      if (token != null && token.isNotEmpty) {
+        // ✅ USE THIS IN PRODUCTION
         headers['Authorization'] = 'Bearer $token';
+
+
+
+        // ❌ TESTING ONLY (uncomment to force 401)
+        // headers['Authorization'] = 'Bearer INVALID_TOKEN';
       }
     }
 
     return headers;
   }
 
+  // ================= CORE REQUEST =================
+
   static Future<http.Response> _makeRequest(
-    String method,
-    String endpoint, {
-    Map<String, dynamic>? body,
-    bool includeAuth = true,
-  }) async {
+      String method,
+      String endpoint, {
+        Map<String, dynamic>? body,
+        bool includeAuth = true,
+      }) async {
     final url = Uri.parse('$baseUrl$endpoint');
     final headers = await _getHeaders(includeAuth: includeAuth);
 
-    print('=== API REQUEST ===');
-    print('Method: $method');
-    print('URL: $url');
-    print('Headers: $headers');
-    if (body != null) {
-      print('Body: ${jsonEncode(body)}');
-    }
-    print('Include Auth: $includeAuth');
-
     try {
       http.Response response;
+
       switch (method.toUpperCase()) {
         case 'GET':
           response = await http.get(url, headers: headers);
@@ -112,204 +112,146 @@ class ApiService {
           response = await http.delete(url, headers: headers);
           break;
         default:
-          throw UnsupportedError('HTTP method $method is not supported');
+          throw UnsupportedError('Unsupported HTTP method');
       }
 
-      print('Response Status: ${response.statusCode}');
-      print('Response Body: ${response.body}');
-      print('==================');
-
-      // Handle 401 Unauthorized specifically
+      // 🔥 SESSION EXPIRED — SILENT HANDLING
       if (response.statusCode == 401) {
-        await clearAuthData(); // Clear invalid token
-        throw Exception('Authentication failed. Please login again.');
+        await _handleSessionExpired();
+        throw SessionExpiredException();
       }
 
       return response;
     } on SocketException {
       throw Exception('No internet connection');
-    } on HttpException {
-      throw Exception('Server error');
-    } catch (e) {
-      throw Exception('Unexpected error: $e');
     }
   }
+
+  // ================= AUTH =================
 
   static Future<LoginResponse> login(String phoneNumber, String name) async {
-    try {
-      final response = await _makeRequest(
-        'POST',
-        '/api/users/login',
-        body: {
-          'phone_number': phoneNumber,
-          'name': name,
-        },
-        includeAuth: false,
-      );
+    final response = await _makeRequest(
+      'POST',
+      '/api/users/login',
+      body: {
+        'phone_number': phoneNumber,
+        'name': name,
+      },
+      includeAuth: false,
+    );
 
-      if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        if (responseData['success'] == true && responseData['data'] != null) {
-          final loginResponse = LoginResponse.fromJson(responseData['data']);
-          await saveAuthToken(loginResponse.token);
-          await saveUserId(loginResponse.user.id);
-          return loginResponse;
-        } else {
-          throw Exception(responseData['message'] ?? 'Login failed');
-        }
-      } else {
-        throw Exception('Login failed with status: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Login error: $e');
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode == 200 && data['success'] == true) {
+      final loginResponse = LoginResponse.fromJson(data['data']);
+      await saveAuthToken(loginResponse.token);
+      await saveUserId(loginResponse.user.id);
+      return loginResponse;
     }
+
+    throw Exception(data['message'] ?? 'Login failed');
   }
 
+  // ================= RIDES =================
+
   static Future<RideRequestResponse> requestRide(
-    String pickupAddress,
-    String dropAddress,
-  ) async {
-    try {
-      // Check if user is authenticated before making request
-      if (!await isAuthenticated()) {
-        throw Exception('Please login to request a ride');
-      }
+      String pickupAddress,
+      String dropAddress,
+      ) async {
+    final response = await _makeRequest(
+      'POST',
+      '/api/users/rides/request',
+      body: {
+        'pickup_address': pickupAddress,
+        'drop_address': dropAddress,
+      },
+    );
 
-      final response = await _makeRequest(
-        'POST',
-        '/api/users/rides/request',
-        body: {
-          'pickup_address': pickupAddress,
-          'drop_address': dropAddress,
-        },
-      );
-
-      if (response.statusCode == 201) {
-        final responseData = jsonDecode(response.body);
-        if (responseData['success'] == true && responseData['data'] != null) {
-          return RideRequestResponse.fromJson(responseData['data']);
-        } else {
-          throw Exception(responseData['message'] ?? 'Ride request failed');
-        }
-      } else {
-        throw Exception('Ride request failed with status: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Ride request error: $e');
+    final data = jsonDecode(response.body);
+    if (response.statusCode == 201 && data['success'] == true) {
+      return RideRequestResponse.fromJson(data['data']);
     }
+
+    throw Exception(data['message'] ?? 'Ride request failed');
   }
 
   static Future<Ride> getRideStatus(String rideId) async {
-    try {
-      final response = await _makeRequest(
-        'GET',
-        '/api/users/rides/$rideId/status',
-      );
+    final response = await _makeRequest(
+      'GET',
+      '/api/users/rides/$rideId/status',
+    );
 
-      if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        if (responseData['success'] == true && responseData['data'] != null) {
-          return Ride.fromJson(responseData['data']['ride']);
-        } else {
-          throw Exception(responseData['message'] ?? 'Failed to get ride status');
-        }
-      } else {
-        throw Exception('Failed to get ride status with status: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Get ride status error: $e');
+    final data = jsonDecode(response.body);
+    if (response.statusCode == 200 && data['success'] == true) {
+      return Ride.fromJson(data['data']['ride']);
     }
+
+    throw Exception(data['message'] ?? 'Failed to get ride status');
   }
 
   static Future<RideHistoryResponse> getRideHistory({
     int limit = 20,
     int offset = 0,
   }) async {
-    try {
-      final response = await _makeRequest(
-        'GET',
-        '/api/users/rides/history?limit=$limit&offset=$offset',
-      );
+    final response = await _makeRequest(
+      'GET',
+      '/api/users/rides/history?limit=$limit&offset=$offset',
+    );
 
-      if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        if (responseData['success'] == true && responseData['data'] != null) {
-          return RideHistoryResponse.fromJson(responseData['data']);
-        } else {
-          throw Exception(responseData['message'] ?? 'Failed to get ride history');
-        }
-      } else {
-        throw Exception('Failed to get ride history with status: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Get ride history error: $e');
+    final data = jsonDecode(response.body);
+    if (response.statusCode == 200 && data['success'] == true) {
+      return RideHistoryResponse.fromJson(data['data']);
     }
+
+    throw Exception(data['message'] ?? 'Failed to get ride history');
   }
+
+  // ================= NOTIFICATIONS =================
 
   static Future<NotificationsResponse> getNotifications({
     int limit = 20,
     int offset = 0,
   }) async {
-    try {
-      final response = await _makeRequest(
-        'GET',
-        '/api/users/notifications?limit=$limit&offset=$offset',
-      );
+    final response = await _makeRequest(
+      'GET',
+      '/api/users/notifications?limit=$limit&offset=$offset',
+    );
 
-      if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        if (responseData['success'] == true && responseData['data'] != null) {
-          return NotificationsResponse.fromJson(responseData['data']);
-        } else {
-          throw Exception(responseData['message'] ?? 'Failed to get notifications');
-        }
-      } else {
-        throw Exception('Failed to get notifications with status: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Get notifications error: $e');
+    final data = jsonDecode(response.body);
+    if (response.statusCode == 200 && data['success'] == true) {
+      return NotificationsResponse.fromJson(data['data']);
     }
+
+    throw Exception(data['message'] ?? 'Failed to get notifications');
   }
+
+  // ================= PROFILE =================
 
   static Future<UserProfile> getUserProfile() async {
-    try {
-      final response = await _makeRequest(
-        'GET',
-        '/api/users/profile',
-      );
+    final response = await _makeRequest(
+      'GET',
+      '/api/users/profile',
+    );
 
-      if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        if (responseData['success'] == true && responseData['data'] != null) {
-          return UserProfile.fromJson(responseData['data']['user']);
-        } else {
-          throw Exception(responseData['message'] ?? 'Failed to get user profile');
-        }
-      } else {
-        throw Exception('Failed to get user profile with status: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Get user profile error: $e');
+    final data = jsonDecode(response.body);
+    if (response.statusCode == 200 && data['success'] == true) {
+      return UserProfile.fromJson(data['data']['user']);
     }
+
+    throw Exception(data['message'] ?? 'Failed to get user profile');
   }
 
-  static Future<void> cancelRide(String rideId) async {
-    try {
-      final response = await _makeRequest(
-        'DELETE',
-        '/api/users/rides/$rideId',
-      );
+  // ================= CANCEL =================
 
-      if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        if (responseData['success'] != true) {
-          throw Exception(responseData['message'] ?? 'Failed to cancel ride');
-        }
-      } else {
-        throw Exception('Failed to cancel ride with status: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Cancel ride error: $e');
+  static Future<void> cancelRide(String rideId) async {
+    final response = await _makeRequest(
+      'DELETE',
+      '/api/users/rides/$rideId',
+    );
+
+    final data = jsonDecode(response.body);
+    if (response.statusCode != 200 || data['success'] != true) {
+      throw Exception(data['message'] ?? 'Failed to cancel ride');
     }
   }
 }
