@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../models/notification_model.dart';
+import 'package:taxi_app_user/utils/network_util.dart';
+import 'package:taxi_app_user/widget/no_internet_widget.dart';
 
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});
@@ -13,11 +15,32 @@ class _NotificationsPageState extends State<NotificationsPage> {
   List<NotificationModel> notifications = [];
   bool isLoading = true;
   String? errorMessage;
+  bool hasNetwork = true;
+  bool checkingNetwork = true;
 
   @override
   void initState() {
     super.initState();
-    _loadNotifications();
+    _init();
+  }
+  Future<void> _init() async {
+    final connected = await hasInternet();
+
+    if (!connected) {
+      setState(() {
+        hasNetwork = false;
+        checkingNetwork = false;
+        isLoading = false;
+      });
+      return;
+    }
+
+    setState(() {
+      hasNetwork = true;
+      checkingNetwork = false;
+    });
+
+    await _loadNotifications();
   }
 
   Future<void> _loadNotifications() async {
@@ -32,26 +55,52 @@ class _NotificationsPageState extends State<NotificationsPage> {
         isLoading = false;
       });
     } catch (e) {
-      // 🔥 SESSION EXPIRED → ApiService already redirected to Login
       if (e is SessionExpiredException) {
         return;
       }
 
+      if (e.toString().contains('SocketException') ||
+          e.toString().contains('No internet')) {
+        setState(() {
+          hasNetwork = false;
+          isLoading = false;
+        });
+        return;
+      }
+
       setState(() {
-        errorMessage = 'Failed to load notifications: ${e.toString()}';
+        errorMessage = 'Failed to load notifications';
         isLoading = false;
       });
-    }
-  }
+    }}
 
 
 
-  Future<void> _refreshNotifications() async {
+
+    Future<void> _refreshNotifications() async {
     await _loadNotifications();
   }
 
   @override
   Widget build(BuildContext context) {
+    // ⏳ Checking network
+    if (checkingNetwork) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    // ❌ No internet → full page
+    if (!hasNetwork) {
+      return NoInternetWidget(
+        onRetry: () async {
+          setState(() {
+            checkingNetwork = true;
+          });
+          await _init();
+        },
+      );
+    }
     return Scaffold(
       appBar: AppBar(
         elevation: 0,

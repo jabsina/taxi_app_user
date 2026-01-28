@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:taxi_app_user/utils/network_util.dart';
+import 'package:taxi_app_user/widget/no_internet_widget.dart';
 import '../services/api_service.dart';
 import '../models/ride_model.dart';
 
@@ -11,13 +13,35 @@ class HistoryPage extends StatefulWidget {
 
 class _HistoryPageState extends State<HistoryPage> {
   List<Ride> rideHistory = [];
-  bool isLoading = true;
+
   String? errorMessage;
+  bool hasNetwork = true;
+  bool checkingNetwork = true;
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadRideHistory();
+    _init();
+  }
+  Future<void> _init() async {
+    final connected = await hasInternet();
+
+    if (!connected) {
+      setState(() {
+        hasNetwork = false;
+        checkingNetwork = false;
+        isLoading = false;
+      });
+      return;
+    }
+
+    setState(() {
+      hasNetwork = true;
+      checkingNetwork = false;
+    });
+
+    await _loadRideHistory();
   }
 
   Future<void> _loadRideHistory() async {
@@ -33,11 +57,17 @@ class _HistoryPageState extends State<HistoryPage> {
         isLoading = false;
       });
     } catch (e) {
-      // 🔥 SESSION EXPIRED → ApiService already redirected to Login
       if (e is SessionExpiredException) {
         return;
       }
-  }}
+
+      if (e.toString().contains('SocketException') ||
+          e.toString().contains('No internet')) {
+        setState(() {
+          hasNetwork = false;
+          isLoading = false;
+        });
+      }}}
 
   Future<void> _refreshHistory() async {
     await _loadRideHistory();
@@ -94,6 +124,25 @@ class _HistoryPageState extends State<HistoryPage> {
 
   @override
   Widget build(BuildContext context) {
+    // ⏳ While checking internet
+    if (checkingNetwork) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    // ❌ No internet → show full page
+    if (!hasNetwork) {
+      return NoInternetWidget(
+        onRetry: () async {
+          setState(() {
+            checkingNetwork = true;
+          });
+          await _init();
+        },
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         elevation: 0,

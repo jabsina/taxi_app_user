@@ -10,6 +10,9 @@ import 'package:taxi_app_user/screen/loginscreen.dart';
 import 'package:taxi_app_user/screen/main_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/api_service.dart';
+import '../utils/network_util.dart';
+import '../widget/no_internet_widget.dart';
+
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -22,6 +25,8 @@ class _HomePageState extends State<HomePage> {
   bool isWaitingForApproval = false;
   bool isRequestingRide = false;
   String? currentRideId;
+  bool hasNetwork = true;
+  bool checkingNetwork = true;
 
   String pickupLocationText = 'Enter pickup location';
 
@@ -31,6 +36,15 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    checkNetwork();
+  }
+// 🌐 CHECK NETWORK STATUS
+  Future<void> checkNetwork() async {
+    final connected = await hasInternet();
+    setState(() {
+      hasNetwork = connected;
+      checkingNetwork = false;
+    });
   }
 
   // ---------------- LOCATION RESOLVE (NO SUGGESTIONS) ----------------
@@ -90,6 +104,16 @@ class _HomePageState extends State<HomePage> {
   // ---------------- RIDE REQUEST ----------------
   Future<void> _requestRide() async {
     FocusScope.of(context).unfocus();
+    // ✅ CHECK INTERNET HERE
+    final connected = await hasInternet();
+    if (!connected) {
+      setState(() {
+        hasNetwork = false;      // 🔥 THIS TRIGGERS OFFLINE SCREEN
+        checkingNetwork = false;
+        isRequestingRide = false;
+      });
+      return;
+    }
 
     if (pickupController.text.trim().isEmpty ||
         destinationController.text.trim().isEmpty) {
@@ -131,13 +155,8 @@ class _HomePageState extends State<HomePage> {
         return;
       }
 
-      // Normal error (network, validation, etc.)
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Ride request failed: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+
+
     }
     finally {
       setState(() => isRequestingRide = false);
@@ -166,6 +185,23 @@ class _HomePageState extends State<HomePage> {
   // ---------------- UI ----------------
   @override
   Widget build(BuildContext context) {
+
+    // ⏳ While checking internet
+    if (checkingNetwork) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    // ❌ No internet → show full page
+    if (!hasNetwork) {
+      return NoInternetWidget(
+        onRetry: () async {
+          setState(() => checkingNetwork = true);
+          await checkNetwork();
+        },
+      );
+    }
     return Scaffold(
       resizeToAvoidBottomInset: true,
       backgroundColor: Colors.transparent,

@@ -3,6 +3,9 @@ import 'package:taxi_app_user/screen/loginscreen.dart';
 import '../services/api_service.dart';
 import '../models/user_model.dart';
 import '../services/secure_storage_service.dart';
+import 'package:taxi_app_user/utils/network_util.dart';
+import 'package:taxi_app_user/widget/no_internet_widget.dart';
+
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
@@ -14,11 +17,32 @@ class _ProfilePageState extends State<ProfilePage> {
   UserProfile? userProfile;
   bool isLoading = true;
   String? errorMessage;
+  bool hasNetwork = true;
+  bool checkingNetwork = true;
 
   @override
   void initState() {
     super.initState();
-    _loadUserProfile();
+    _init();
+  }
+  Future<void> _init() async {
+    final connected = await hasInternet();
+
+    if (!connected) {
+      setState(() {
+        hasNetwork = false;
+        checkingNetwork = false;
+        isLoading = false;
+      });
+      return;
+    }
+
+    setState(() {
+      hasNetwork = true;
+      checkingNetwork = false;
+    });
+
+    await _loadUserProfile();
   }
 
   Future<void> _loadUserProfile() async {
@@ -33,21 +57,29 @@ class _ProfilePageState extends State<ProfilePage> {
         userProfile = profile;
         isLoading = false;
       });
-    } catch (e) {
-      // 🔥 IMPORTANT FIX — prevents error flash
+    }catch (e) {
       if (e is SessionExpiredException) {
-        return; // redirect already handled globally
+        return;
+      }
+
+      if (e.toString().contains('SocketException') ||
+          e.toString().contains('No internet')) {
+        setState(() {
+          hasNetwork = false;
+          isLoading = false;
+        });
+        return;
       }
 
       setState(() {
-        errorMessage = 'Failed to load profile: ${e.toString()}';
+        errorMessage = 'Failed to load profile';
         isLoading = false;
       });
-    }
-  }
+    }}
 
 
-  /// 🔐 REAL LOGOUT (UNCHANGED)
+
+    /// 🔐 REAL LOGOUT (UNCHANGED)
   Future<void> _logout() async {
     await SecureStorageService.logout();
 
@@ -96,6 +128,24 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    // ⏳ Checking network
+    if (checkingNetwork) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    // ❌ No internet → full page
+    if (!hasNetwork) {
+      return NoInternetWidget(
+        onRetry: () async {
+          setState(() {
+            checkingNetwork = true;
+          });
+          await _init();
+        },
+      );
+    }
     return Scaffold(
       appBar: AppBar(
         elevation: 0,

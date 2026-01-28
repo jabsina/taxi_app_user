@@ -3,6 +3,7 @@ import 'package:taxi_app_user/screen/main_screen.dart';
 import 'package:taxi_app_user/services/secure_storage_service.dart';
 import '../../services/notifications_services.dart';
 import '../../services/api_service.dart';
+import 'package:taxi_app_user/utils/network_util.dart';
 
 class GetStartedPage extends StatefulWidget {
   const GetStartedPage({super.key});
@@ -16,6 +17,9 @@ class _GetStartedPageState extends State<GetStartedPage> {
   final _usernameController = TextEditingController();
   final _phoneController = TextEditingController();
   bool _isLoading = false;
+  bool hasNetwork = true;
+  bool checkingNetwork = false;
+  bool showNoInternet = false; // ✅ ADD THIS
 
   static const Color primaryColor = Color(0xFF0E2A38);
 
@@ -25,12 +29,54 @@ class _GetStartedPageState extends State<GetStartedPage> {
     _phoneController.dispose();
     super.dispose();
   }
+  Widget _noInternetBanner() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.red.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.red.shade200),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.error_outline, color: Colors.red.shade400),
+          const SizedBox(width: 12),
+          Text(
+            'NO_INTERNET',
+            style: TextStyle(
+              color: Colors.red.shade400,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
 
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
 
     FocusScope.of(context).unfocus();
-    setState(() => _isLoading = true);
+
+    // 🔴 CHECK INTERNET FIRST
+    final connected = await hasInternet();
+    if (!connected) {
+      setState(() {
+        showNoInternet = true; // 🔥 SHOW BANNER
+      });
+      return; // ⛔ STOP LOGIN
+    }
+
+    // ✅ INTERNET OK → HIDE BANNER
+    setState(() {
+      showNoInternet = false;
+      _isLoading = true;
+    });
+
+
 
     try {
       final loginResponse = await ApiService.login(
@@ -100,6 +146,7 @@ class _GetStartedPageState extends State<GetStartedPage> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  if (showNoInternet) _noInternetBanner(),
                   const Text(
                     'Sign in',
                     textAlign: TextAlign.center,
