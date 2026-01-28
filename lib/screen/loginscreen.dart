@@ -146,7 +146,7 @@ class _GetStartedPageState extends State<GetStartedPage> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  if (showNoInternet) _noInternetBanner(),
+
                   const Text(
                     'Sign in',
                     textAlign: TextAlign.center,
@@ -165,6 +165,8 @@ class _GetStartedPageState extends State<GetStartedPage> {
                     ),
                   ),
                   const SizedBox(height: 32),
+                  if (showNoInternet) _noInternetBanner(),
+                  const SizedBox(height: 10),
 
                   /// NAME
                   TextFormField(
