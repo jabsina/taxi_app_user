@@ -33,7 +33,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'TraveLink',
+      title: 'Driver Link',
 
       // 🔥 REQUIRED for session-expiry navigation
       navigatorKey: navigatorKey,

@@ -4,15 +4,11 @@ import 'package:http/http.dart' as http;
 import 'package:taxi_app_user/widget/call_confirmation_sheet.dart';
 import 'package:taxi_app_user/services/api_service.dart';
 import 'package:taxi_app_user/services/notifications_services.dart';
-import 'package:taxi_app_user/models/ride_model.dart';
-import 'package:taxi_app_user/models/user_model.dart';
 import 'package:taxi_app_user/screen/loginscreen.dart';
 import 'package:taxi_app_user/screen/main_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../services/api_service.dart';
 import '../utils/network_util.dart';
 import '../widget/no_internet_widget.dart';
-
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -31,14 +27,15 @@ class _HomePageState extends State<HomePage> {
   String pickupLocationText = 'Enter pickup location';
 
   final TextEditingController pickupController = TextEditingController();
-  final TextEditingController destinationController = TextEditingController();
+  final TextEditingController durationController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     checkNetwork();
   }
-// 🌐 CHECK NETWORK STATUS
+
+  // 🌐 CHECK NETWORK STATUS
   Future<void> checkNetwork() async {
     final connected = await hasInternet();
     setState(() {
@@ -47,30 +44,9 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  // ---------------- LOCATION RESOLVE (NO SUGGESTIONS) ----------------
-  Future<Map<String, dynamic>?> getLocationFromText(String query) async {
-    if (query.trim().isEmpty) return null;
-
-    final url = Uri.parse(
-      'https://nominatim.openstreetmap.org/search'
-          '?q=$query&format=json&limit=1&countrycodes=in',
-    );
-
-    final response = await http.get(
-      url,
-      headers: {'User-Agent': 'taxi-app'},
-    );
-
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      if (data.isNotEmpty) return data[0];
-    }
-    return null;
-  }
-
   // ---------------- CALL ADMIN ----------------
   Future<void> _callAdminNumber() async {
-    const adminNumber = '+919876543210';
+    const adminNumber = '+919847081797';
     final uri = Uri(scheme: 'tel', path: adminNumber);
 
     if (await canLaunchUrl(uri)) {
@@ -104,11 +80,11 @@ class _HomePageState extends State<HomePage> {
   // ---------------- RIDE REQUEST ----------------
   Future<void> _requestRide() async {
     FocusScope.of(context).unfocus();
-    // ✅ CHECK INTERNET HERE
+
     final connected = await hasInternet();
     if (!connected) {
       setState(() {
-        hasNetwork = false;      // 🔥 THIS TRIGGERS OFFLINE SCREEN
+        hasNetwork = false;
         checkingNetwork = false;
         isRequestingRide = false;
       });
@@ -116,9 +92,9 @@ class _HomePageState extends State<HomePage> {
     }
 
     if (pickupController.text.trim().isEmpty ||
-        destinationController.text.trim().isEmpty) {
+        durationController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter pickup & destination')),
+        const SnackBar(content: Text('Enter pickup & required duration')),
       );
       return;
     }
@@ -128,7 +104,7 @@ class _HomePageState extends State<HomePage> {
     try {
       final response = await ApiService.requestRide(
         pickupController.text.trim(),
-        destinationController.text.trim(),
+        durationController.text.trim(),
       );
 
       setState(() {
@@ -150,50 +126,21 @@ class _HomePageState extends State<HomePage> {
         );
       }
     } catch (e) {
-      // 🔥 SESSION EXPIRED → ApiService already redirected to Login
-      if (e is SessionExpiredException) {
-        return;
-      }
-
-
-
-    }
-    finally {
+      if (e is SessionExpiredException) return;
+    } finally {
       setState(() => isRequestingRide = false);
     }
-  }
-
-  void _handleAuthError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-        action: SnackBarAction(
-          label: 'Login',
-          textColor: Colors.white,
-          onPressed: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const GetStartedPage()),
-            );
-          },
-        ),
-      ),
-    );
   }
 
   // ---------------- UI ----------------
   @override
   Widget build(BuildContext context) {
-
-    // ⏳ While checking internet
     if (checkingNetwork) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
-    // ❌ No internet → show full page
     if (!hasNetwork) {
       return NoInternetWidget(
         onRetry: () async {
@@ -202,18 +149,14 @@ class _HomePageState extends State<HomePage> {
         },
       );
     }
+
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      backgroundColor: Colors.transparent,
       appBar: AppBar(
         backgroundColor: const Color(0xFF0F2A3A),
         title: const Text(
-          'TraveLink',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 25,
-            fontWeight: FontWeight.w600,
-          ),
+          'Driver Link',
+          style: TextStyle(color: Colors.white, fontSize: 25),
         ),
       ),
       body: SingleChildScrollView(
@@ -222,13 +165,12 @@ class _HomePageState extends State<HomePage> {
           children: [
             _pickupBox(),
             const SizedBox(height: 20),
-            _destinationBox(),
+            _durationBox(),
             const SizedBox(height: 20),
             GestureDetector(
               onTap: _onRequestRide,
               child: _requestRideButton(),
             ),
-
           ],
         ),
       ),
@@ -245,12 +187,13 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _destinationBox() {
+  Widget _durationBox() {
     return _inputBox(
-      icon: Icons.location_on,
-      iconColor: Colors.redAccent,
-      controller: destinationController,
-      hint: 'Enter destination',
+      icon: Icons.timer,
+      iconColor: Colors.orange,
+      controller: durationController,
+      hint: 'Required Duration ',
+      keyboardType: TextInputType.number,
     );
   }
 
@@ -259,6 +202,7 @@ class _HomePageState extends State<HomePage> {
     required Color iconColor,
     required TextEditingController controller,
     required String hint,
+    TextInputType keyboardType = TextInputType.text,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -287,6 +231,7 @@ class _HomePageState extends State<HomePage> {
           Expanded(
             child: TextField(
               controller: controller,
+              keyboardType: keyboardType,
               decoration: InputDecoration(
                 hintText: hint,
                 border: InputBorder.none,
