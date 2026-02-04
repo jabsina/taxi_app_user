@@ -21,13 +21,16 @@ class _HomePageState extends State<HomePage> {
   bool isWaitingForApproval = false;
   bool isRequestingRide = false;
   String? currentRideId;
-  bool hasNetwork = true;
-  bool checkingNetwork = true;
 
   String pickupLocationText = 'Enter pickup location';
 
   final TextEditingController pickupController = TextEditingController();
   final TextEditingController durationController = TextEditingController();
+  
+  int selectedHours = 2; // Default to 2 hours
+
+  bool hasNetwork = true;
+  bool checkingNetwork = true;
 
   @override
   void initState() {
@@ -91,10 +94,9 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    if (pickupController.text.trim().isEmpty ||
-        durationController.text.trim().isEmpty) {
+    if (pickupController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter pickup & required duration')),
+        const SnackBar(content: Text('Enter pickup address')),
       );
       return;
     }
@@ -104,7 +106,7 @@ class _HomePageState extends State<HomePage> {
     try {
       final response = await ApiService.requestRide(
         pickupController.text.trim(),
-        durationController.text.trim(),
+        requiredTimeHours: selectedHours,
       );
 
       setState(() {
@@ -165,7 +167,7 @@ class _HomePageState extends State<HomePage> {
           children: [
             _pickupBox(),
             const SizedBox(height: 20),
-            _durationBox(),
+            _timeSelector(),
             const SizedBox(height: 20),
             GestureDetector(
               onTap: _onRequestRide,
@@ -187,13 +189,118 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _durationBox() {
-    return _inputBox(
-      icon: Icons.timer,
-      iconColor: Colors.orange,
-      controller: durationController,
-      hint: 'Required Duration ',
-      keyboardType: TextInputType.number,
+  Widget _timeSelector() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.timer, color: Colors.orange),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Required Duration',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF0F2A3A),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: () {
+                    if (selectedHours > 1) {
+                      setState(() {
+                        selectedHours--;
+                      });
+                    }
+                  },
+                  child: Container(
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.remove, color: Colors.grey),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Container(
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0F2A3A).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Center(
+                    child: Text(
+                      '$selectedHours hour${selectedHours > 1 ? 's' : ''}',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0F2A3A),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () {
+                    if (selectedHours < 24) {
+                      setState(() {
+                        selectedHours++;
+                      });
+                    }
+                  },
+                  child: Container(
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.add, color: Colors.grey),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Select how many hours you need the ride',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey.shade600,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

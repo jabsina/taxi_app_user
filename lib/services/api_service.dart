@@ -53,6 +53,23 @@ class ApiService {
     );
   }
 
+  static Future<bool> isAuthenticated() async {
+    final token = await getAuthToken();
+    if (token == null || token.isEmpty) {
+      return false;
+    }
+    
+    // Basic token validation - JWT tokens have 3 parts separated by dots
+    final parts = token.split('.');
+    if (parts.length != 3) {
+      print('Invalid token format: $token');
+      await clearAuthData();
+      return false;
+    }
+    
+    return true;
+  }
+
   // ================= HEADERS =================
 
   static Future<Map<String, String>> _getHeaders({bool includeAuth = true}) async {
@@ -155,24 +172,37 @@ class ApiService {
   // ================= RIDES =================
 
   static Future<RideRequestResponse> requestRide(
-      String pickupAddress,
-      String dropAddress,
-      ) async {
-    final response = await _makeRequest(
-      'POST',
-      '/api/users/rides/request',
-      body: {
-        'pickup_address': pickupAddress,
-        'drop_address': dropAddress,
-      },
-    );
+    String pickupAddress, {
+    int requiredTimeHours = 2,
+  }) async {
+    try {
+      // Check if user is authenticated before making request
+      if (!await isAuthenticated()) {
+        throw Exception('Please login to request a ride');
+      }
 
-    final data = jsonDecode(response.body);
-    if (response.statusCode == 201 && data['success'] == true) {
-      return RideRequestResponse.fromJson(data['data']);
+      final response = await _makeRequest(
+        'POST',
+        '/api/users/rides/request',
+        body: {
+          'pickup_address': pickupAddress,
+          'required_time_hours': requiredTimeHours,
+        },
+      );
+
+      if (response.statusCode == 201) {
+        final responseData = jsonDecode(response.body);
+        if (responseData['success'] == true && responseData['data'] != null) {
+          return RideRequestResponse.fromJson(responseData['data']);
+        } else {
+          throw Exception(responseData['message'] ?? 'Ride request failed');
+        }
+      } else {
+        throw Exception('Ride request failed with status: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Ride request error: $e');
     }
-
-    throw Exception(data['message'] ?? 'Ride request failed');
   }
 
   static Future<Ride> getRideStatus(String rideId) async {
