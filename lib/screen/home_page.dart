@@ -10,6 +10,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../utils/network_util.dart';
 import '../widget/no_internet_widget.dart';
 
+
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -18,8 +20,11 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  List<dynamic> pickupSuggestions = [];
+  bool showPickupSuggestions = false;
   bool isWaitingForApproval = false;
   bool isRequestingRide = false;
+  bool pickupSelected = false;
   String? currentRideId;
 
   String pickupLocationText = 'Enter pickup location';
@@ -46,6 +51,49 @@ class _HomePageState extends State<HomePage> {
       checkingNetwork = false;
     });
   }
+  Future<void> fetchPickupSuggestions(String input) async {
+    print('ON_CHANGED CALLED WITH: $input');
+    if (input.isEmpty) {
+      setState(() {
+        pickupSuggestions.clear();
+        showPickupSuggestions = false;
+      });
+      return;
+    }
+
+    final encodedInput = Uri.encodeComponent(input);
+
+
+    final url = Uri.parse(
+      'https://photon.komoot.io/api/?q=$encodedInput&limit=10&lang=en',
+    );
+
+
+
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'DriverLinkApp/1.0 (contact@driverlink.com)',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List features = json.decode(response.body)['features'];
+        print('PHOTON RESULTS COUNT: ${features.length}');
+        setState(() {
+          pickupSuggestions = features;
+          showPickupSuggestions = pickupSuggestions.isNotEmpty;
+        });
+      }
+
+    } catch (e) {
+      debugPrint('OSM error: $e');
+    }
+  }
+
 
   // ---------------- CALL ADMIN ----------------
   Future<void> _callAdminNumber() async {
@@ -62,7 +110,19 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ---------------- REQUEST BUTTON ----------------
+  // ---------------- REQUEST BUTTON ----------------
   void _onRequestRide() {
+    // ❗ GUARD: user must select from suggestions
+    if (!pickupSelected) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a pickup location from suggestions'),
+        ),
+      );
+      return;
+    }
+
+    // ❗ GUARD: avoid double request
     if (isRequestingRide) return;
 
     showModalBottomSheet(
@@ -79,6 +139,7 @@ class _HomePageState extends State<HomePage> {
       },
     );
   }
+
 
   // ---------------- RIDE REQUEST ----------------
   Future<void> _requestRide() async {
@@ -161,9 +222,12 @@ class _HomePageState extends State<HomePage> {
           style: TextStyle(color: Colors.white, fontSize: 25),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        body: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          child: Padding(
+          padding: const EdgeInsets.all(16),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _pickupBox(),
             const SizedBox(height: 20),
@@ -176,18 +240,99 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
+        )
     );
   }
 
   // ---------------- INPUT BOXES ----------------
   Widget _pickupBox() {
-    return _inputBox(
-      icon: Icons.my_location,
-      iconColor: Colors.green,
-      controller: pickupController,
-      hint: pickupLocationText,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _inputBox(
+          icon: Icons.my_location,
+          iconColor: Colors.green,
+          controller: pickupController,
+          hint: pickupLocationText,
+          onChanged: (value) {
+            setState(() {
+              pickupSelected = false;
+            });
+            fetchPickupSuggestions(value);
+          },
+        ),
+
+        // 🔽 Suggestions List
+        if (showPickupSuggestions) _pickupSuggestionsList(),
+      ],
     );
   }
+  Widget _pickupSuggestionsList() {
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      constraints: const BoxConstraints(maxHeight: 200),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+          ),
+        ],
+      ),
+      child: ListView.builder(
+        shrinkWrap: true,
+        itemCount: pickupSuggestions.length,
+        itemBuilder: (context, index) {
+          final place = pickupSuggestions[index];
+
+          return ListTile(
+            leading: const Icon(Icons.location_on, color: Colors.grey),
+            title: Text(
+              [
+                place['properties']['name'],
+                place['properties']['street'],
+                place['properties']['city'],
+                place['properties']['state'],
+                place['properties']['country'],
+              ]
+                  .where((e) => e != null && e.toString().isNotEmpty)
+                  .join(', '),
+            ),
+
+
+            onTap: () {
+              final props = place['properties'];
+
+              final selectedText = [
+                props['name'],
+                props['street'],
+                props['city'],
+                props['state'],
+                props['country'],
+              ]
+                  .where((e) => e != null && e.toString().isNotEmpty)
+                  .join(', ');
+
+              setState(() {
+                pickupController.text = selectedText;
+                pickupSuggestions.clear();
+                showPickupSuggestions = false;
+                pickupSelected = true;
+              });
+
+              FocusScope.of(context).unfocus();
+            },
+
+
+          );
+        },
+      ),
+    );
+  }
+
+
 
   Widget _timeSelector() {
     return Container(
@@ -310,6 +455,7 @@ class _HomePageState extends State<HomePage> {
     required TextEditingController controller,
     required String hint,
     TextInputType keyboardType = TextInputType.text,
+    Function(String)? onChanged, // 🔹 ADD THIS
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -339,6 +485,7 @@ class _HomePageState extends State<HomePage> {
             child: TextField(
               controller: controller,
               keyboardType: keyboardType,
+              onChanged: onChanged,
               decoration: InputDecoration(
                 hintText: hint,
                 border: InputBorder.none,
