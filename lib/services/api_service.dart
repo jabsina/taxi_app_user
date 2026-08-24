@@ -14,7 +14,7 @@ import '../main.dart'; // navigatorKey
 class SessionExpiredException implements Exception {}
 
 class ApiService {
-  static const String baseUrl = "https://api.lenienttree.org";
+  static const String baseUrl = "http://taxi.13.126.46.146.nip.io";
 
   static const String _tokenKey = 'user_token';
   static const String _userIdKey = 'user_id';
